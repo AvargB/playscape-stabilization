@@ -41,6 +41,14 @@ import {
 } from "./features/compare/utils"
 import { loadComparisonState, saveComparisonState } from "./features/compare/storage"
 import { useReviews } from "./features/reviews"
+import {
+    CheckoutDialog,
+    createSessionId,
+    useCheckout,
+    type CheckoutSession,
+    type GiftDecision,
+    type PurchaseType,
+} from "./features/checkout"
 
 const steam = (id: number) =>
     "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg"
@@ -784,7 +792,10 @@ export default function Playscape({
         ),
         [auto, setAuto] = React.useState(appHydration.auto),
         [menu, setMenu] = React.useState(false),
-        [notice, setNotice] = React.useState("")
+        [notice, setNotice] = React.useState(""),
+        [checkoutId, setCheckoutId] = React.useState<number | null>(null),
+        [checkoutSessionId, setCheckoutSessionId] = React.useState<string | null>(null),
+        [checkoutType, setCheckoutType] = React.useState<PurchaseType>("personal")
     const [view, setView] = React.useState(initialView)
     const [profileId, setProfileId] = React.useState(
         socialPeople.find((p) => p.name === initialPlayer)?.id || "you"
@@ -909,6 +920,50 @@ export default function Playscape({
         const nextId = resolveGameRecord(game, data)?.id ?? null
         setDetail(nextId)
     }
+    function openCheckout(
+        game: GameRecord | number | null | undefined,
+        type: PurchaseType = "personal",
+    ) {
+        const resolved = resolveGameRecord(game, data)
+        if (!resolved) {
+            setNotice("That game is no longer available in this prototype catalog.")
+            return
+        }
+        setDetail(null)
+        setCheckoutType(type)
+        setCheckoutSessionId(createSessionId())
+        setCheckoutId(resolved.id)
+    }
+    function closeCheckout() {
+        setCheckoutId(null)
+        setCheckoutSessionId(null)
+    }
+    function completeCheckout(session: CheckoutSession) {
+        const result = checkoutState.completeCheckout(session)
+        if (result.ok === false) {
+            setNotice(result.errors[0] || "This simulated checkout could not be completed.")
+            return result
+        }
+        setNotice(
+            session.purchaseType === "gift"
+                ? "Prototype gift sent. No payment, delivery, or notification occurred."
+                : "Prototype checkout complete. No purchase was made."
+        )
+        return result
+    }
+    function respondToGift(id: string, decision: GiftDecision) {
+        const result = checkoutState.respondToGift(id, decision)
+        if (result.ok === false) {
+            setNotice(result.errors[0] || "This gift response could not be saved.")
+            return result
+        }
+        setNotice(
+            decision === "accepted"
+                ? "Prototype gift accepted. No game license was delivered."
+                : "Prototype gift declined. The historical record was kept."
+        )
+        return result
+    }
     const wishlistSummary = React.useMemo(
         () => buildWishlistSummary(saved, socialPeople, data),
         [saved, data],
@@ -934,6 +989,7 @@ export default function Playscape({
         }
     )
     const reviewState = useReviews({ games: data, savedIds: saved })
+    const checkoutState = useCheckout({ games: data })
     function find() {
         changeView("Discover")
         setActive(true)
@@ -1050,6 +1106,13 @@ export default function Playscape({
                             : "A world to get lost in"}
                     </span>
                 </div>
+                <button
+                    className="web-secondary card-checkout"
+                    onClick={() => openCheckout(g.id)}
+                    aria-label={"Start simulated checkout for " + g.title}
+                >
+                    Checkout
+                </button>
             </div>
         </article>
     )
@@ -2215,6 +2278,7 @@ export default function Playscape({
                             onOpenGame={openGame}
                             onBrowse={() => changeView("Browse")}
                             reviews={reviewState.reviews}
+                            onCheckout={openCheckout}
                         />
                     )}
                     {view === "The Web" && (
@@ -2269,6 +2333,10 @@ export default function Playscape({
                             )}
                             reviews={reviewState.reviews}
                             onOpenGame={(id) => openGame(id)}
+                            checkout={{
+                                state: checkoutState.state,
+                                onRespondToGift: respondToGift,
+                            }}
                         />
                     )}
                     {view === "Gaming Circles" && (
@@ -2427,12 +2495,32 @@ export default function Playscape({
                     setDetail={setDetail}
                     reviews={reviewState.reviews}
                     onSubmitReview={reviewState.submitReview}
+                    onCheckout={openCheckout}
                 />
                 <SocialDialog
                     key={
                         social.dialog ? JSON.stringify(social.dialog) : "closed"
                     }
                 />
+                {checkoutId !== null && checkoutSessionId && (
+                    <CheckoutDialog
+                        key={checkoutSessionId}
+                        game={resolveGameRecord(checkoutId, data)!}
+                        sessionId={checkoutSessionId}
+                        initialPurchaseType={checkoutType}
+                        friends={socialPeople}
+                        currentUser={socialPeople[0]}
+                        renderAvatar={({ id, size = 38 }) => (
+                            <Avatar id={id} size={size} />
+                        )}
+                        onClose={closeCheckout}
+                        onComplete={completeCheckout}
+                        onViewProfile={(id) => {
+                            closeCheckout()
+                            changeView("Profile", id)
+                        }}
+                    />
+                )}
                 {(social.message || notice) && (
                     <div role="status" className="toast">
                         {social.message || notice}

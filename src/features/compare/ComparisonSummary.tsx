@@ -2,6 +2,7 @@
 import * as React from "react"
 import { Icon } from "../../components/Icon"
 import type { GameRecord } from "../../data/games"
+import type { PurchaseType } from "../checkout/types"
 import {
     getComparisonSummary,
     getMajorDifferences,
@@ -19,6 +20,7 @@ export interface ComparisonSummaryProps {
     saved: number[]
     onToggleSaved: (id: number) => void
     onOpenGame: (game: GameRecord | number) => void
+    onCheckout?: (id: number, type: PurchaseType) => void
 }
 
 export default function ComparisonSummary({
@@ -29,6 +31,7 @@ export default function ComparisonSummary({
     saved,
     onToggleSaved,
     onOpenGame,
+    onCheckout,
 }: ComparisonSummaryProps) {
     const [preferredPlatform, setPreferredPlatform] = React.useState("")
     const summary = React.useMemo(
@@ -197,6 +200,15 @@ export default function ComparisonSummary({
                             >
                                 View details
                             </button>
+                            {onCheckout && (
+                                <button
+                                    type="button"
+                                    className="web-secondary"
+                                    onClick={() => onCheckout(game.id, "personal")}
+                                >
+                                    Simulated checkout
+                                </button>
+                            )}
                             {game.officialWebsite && (
                                 <a href={game.officialWebsite} target="_blank" rel="noreferrer">
                                     Official site <Icon name="arrow" size={12} />
@@ -206,8 +218,8 @@ export default function ComparisonSummary({
                     ))}
                 </ul>
                 <p className="cmp-muted">
-                    Official-site links come from catalog metadata. Checkout and
-                    availability are not handled here.
+                    Official-site links come from catalog metadata. Checkout is
+                    simulated only and never uses a live storefront.
                 </p>
             </div>
         </section>

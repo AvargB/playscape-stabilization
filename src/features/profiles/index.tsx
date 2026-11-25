@@ -15,6 +15,13 @@ import {
     REVIEW_SCALE,
     type ReviewRecord,
 } from "../reviews"
+import GiftHistory from "../checkout/GiftHistory"
+import {
+    createEmptyCheckoutState,
+    type CheckoutState,
+    type GiftDecision,
+    type GiftResponseResult,
+} from "../checkout"
 
 export interface ProfilesProps {
     id: string
@@ -36,6 +43,10 @@ export interface ProfilesProps {
     onOpenGame?: (id: number) => void
     initialTab?: string
     initialAudience?: string
+    checkout?: {
+        state: CheckoutState
+        onRespondToGift?: (id: string, decision: GiftDecision) => GiftResponseResult
+    }
 }
 
 export default function PlayerProfile({
@@ -48,6 +59,7 @@ export default function PlayerProfile({
     onOpenGame,
     initialTab = "Overview",
     initialAudience = "Myself",
+    checkout,
 }: ProfilesProps) {
     const { activity, state, saved, go, setDialog } = social
     const RenderAvatar = renderAvatar
@@ -58,6 +70,17 @@ export default function PlayerProfile({
     const [tab, setTab] = React.useState(initialTab)
     const [audience, setAudience] = React.useState(initialAudience)
     const own = p.id === "you"
+    const checkoutState = checkout?.state ?? createEmptyCheckoutState()
+    const giftsTab = own ? "Gifts & Orders" : "Received Gifts"
+    const profileTabs = [
+        "Overview",
+        "Friends",
+        "Recommendations",
+        "Reviews",
+        giftsTab,
+        "Wishlist",
+        "Collections",
+    ]
     const circles = state.circles.filter((x: any) => x.members.includes(p.id))
     const publicWishlist = own
         ? audience === "Myself" ||
@@ -200,7 +223,7 @@ export default function PlayerProfile({
             ) : (
                 <>
                     <div className="social-tabs">
-                        {["Overview", "Friends", "Recommendations", "Reviews", "Wishlist", "Collections"].map(
+                        {profileTabs.map(
                             (t) => (
                                 <button
                                     key={t}
@@ -390,6 +413,15 @@ export default function PlayerProfile({
                                         })
                                     )}
                                 </div>
+                            ) : tab === giftsTab ? (
+                                <GiftHistory
+                                    person={p}
+                                    own={own}
+                                    state={checkoutState}
+                                    renderAvatar={renderAvatar}
+                                    onOpenGame={onOpenGame}
+                                    onRespondToGift={checkout?.onRespondToGift}
+                                />
                             ) : tab === "Wishlist" ? (
                                 <>
                                     <div className="summary">

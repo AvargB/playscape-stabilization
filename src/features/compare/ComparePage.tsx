@@ -3,6 +3,7 @@ import * as React from "react"
 import { Icon } from "../../components/Icon"
 import type { GameRecord } from "../../data/games"
 import { getFriendGameReviews, type ReviewRecord } from "../reviews"
+import type { PurchaseType } from "../checkout/types"
 import ComparisonSummary from "./ComparisonSummary"
 import ComparisonTable from "./ComparisonTable"
 import { GameInfoPopover, type GameInfoTarget } from "./GameInfoPopover"
@@ -29,6 +30,7 @@ export interface ComparePageProps {
     onOpenGame: (game: GameRecord | number) => void
     onBrowse: () => void
     reviews?: ReviewRecord[]
+    onCheckout?: (id: number, type: PurchaseType) => void
 }
 
 export default function ComparePage({
@@ -42,6 +44,7 @@ export default function ComparePage({
     onOpenGame,
     onBrowse,
     reviews = [],
+    onCheckout,
 }: ComparePageProps) {
     const [filter, setFilter] = React.useState<ComparisonFilter>("all")
     const [infoTarget, setInfoTarget] = React.useState<GameInfoTarget | null>(null)
@@ -221,6 +224,7 @@ export default function ComparePage({
                             saved={saved}
                             onToggleSaved={onToggleSaved}
                             onOpenGame={onOpenGame}
+                            onCheckout={onCheckout}
                         />
                     )}
                 </>

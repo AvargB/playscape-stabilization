@@ -23,6 +23,7 @@ import {
     type ReviewRecord,
     type ReviewRecordResult,
 } from "../reviews"
+import type { PurchaseType } from "../checkout/types"
 
 export interface GameDetailsProps {
     games: GameRecord[]
@@ -38,6 +39,7 @@ export interface GameDetailsProps {
     setDetail: (detail: number | null) => void
     reviews: ReviewRecord[]
     onSubmitReview: (draft: ReviewDraft, revisionOf?: string) => ReviewRecordResult
+    onCheckout?: (id: number, type: PurchaseType) => void
 }
 
 export default function GameDetails({
@@ -54,6 +56,7 @@ export default function GameDetails({
     setDetail,
     reviews,
     onSubmitReview,
+    onCheckout,
 }: GameDetailsProps) {
     const data = games?.length ? games : []
     const detailGame =
@@ -287,7 +290,7 @@ export default function GameDetails({
                         <br />
                         Platforms: {detailGame.platform}
                         <br />
-                        Sample base-game price: ${detailGame.price.toFixed(2)} USD. No purchase is made in this prototype.
+                        Sample base-game price: ${detailGame.price.toFixed(2)} USD. Checkout is simulated; no purchase is made in this prototype.
                     </div>
                     <div className="detail-actions">
                         <button
@@ -320,6 +323,22 @@ export default function GameDetails({
                                 ? "Remove from compare"
                                 : "Compare this game"}
                         </button>
+                        {onCheckout && (
+                            <>
+                                <button
+                                    className="web-secondary chk-detail-action"
+                                    onClick={() => onCheckout(detailGame.id, "personal")}
+                                >
+                                    Purchase in prototype
+                                </button>
+                                <button
+                                    className="web-secondary chk-detail-action"
+                                    onClick={() => onCheckout(detailGame.id, "gift")}
+                                >
+                                    Gift to a friend
+                                </button>
+                            </>
+                        )}
                         <a
                             href={
                                 "https://store.steampowered.com/app/" +

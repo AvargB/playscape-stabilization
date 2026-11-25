@@ -21,7 +21,8 @@ export function GlobalFooter({ atmosphere, onNavigate }: GlobalFooterProps) {
             data-atmosphere={season}
         >
             <p className="global-footer-disclaimer">
-                PLAYSCAPE is a prototype.
+                PLAYSCAPE is a community-driven prototype. Features and content
+                are subject to change.
             </p>
             <button
                 type="button"
