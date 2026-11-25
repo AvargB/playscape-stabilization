@@ -17,12 +17,7 @@ import {
     type ReviewRecord,
 } from "../reviews"
 import GiftHistory from "../checkout/GiftHistory"
-import {
-    createEmptyCheckoutState,
-    type CheckoutState,
-    type GiftDecision,
-    type GiftResponseResult,
-} from "../checkout"
+import { createEmptyCheckoutState, type CheckoutState } from "../checkout"
 
 export interface ProfilesProps {
     id: string
@@ -46,7 +41,6 @@ export interface ProfilesProps {
     initialAudience?: string
     checkout?: {
         state: CheckoutState
-        onRespondToGift?: (id: string, decision: GiftDecision) => GiftResponseResult
     }
     /** Full canonical ownership list, including seeded demo games. */
     ownedIds?: number[]
@@ -257,8 +251,8 @@ export default function PlayerProfile({
                                         <p role="status">
                                             Owned games: {ownedIds.length}.{" "}
                                             {own
-                                                ? "Personal purchases and accepted gifts appear here immediately."
-                                                : "Seeded games and accepted gifts appear here immediately."}
+                                                ? "Personal purchases and auto-accepted gifts appear here immediately."
+                                                : "Seeded games and auto-accepted gifts appear here immediately."}
                                         </p>
                                         <div className="social-game-grid">
                                             {ownedIds.map((id) => (
@@ -455,7 +449,6 @@ export default function PlayerProfile({
                                         state={checkoutState}
                                         renderAvatar={renderAvatar}
                                         onOpenGame={onOpenGame}
-                                        onRespondToGift={checkout?.onRespondToGift}
                                         ownedIds={ownedIds}
                                     />
                                     {own && onResetPrototypeData && (

@@ -47,7 +47,6 @@ import {
     removeWishlistPurchases,
     useCheckout,
     type CheckoutSession,
-    type GiftDecision,
     type PurchaseType,
     useCart,
 } from "./features/checkout"
@@ -1036,21 +1035,8 @@ export default function Playscape({
         if (checkoutFromCart) cart.clear()
         setNotice(
             session.purchaseType === "gift"
-                ? "Prototype gift sent. No payment, delivery, or notification occurred."
+                ? "Prototype gift sent and added to your friend's local library. No payment, delivery, or notification occurred."
                 : "Prototype checkout complete. No purchase was made."
-        )
-        return result
-    }
-    function respondToGift(id: string, decision: GiftDecision) {
-        const result = checkoutState.respondToGift(id, decision)
-        if (result.ok === false) {
-            setNotice(result.errors[0] || "This gift response could not be saved.")
-            return result
-        }
-        setNotice(
-            decision === "accepted"
-                ? "Prototype gift accepted. No game license was delivered."
-                : "Prototype gift declined. The historical record was kept."
         )
         return result
     }
@@ -2526,10 +2512,7 @@ export default function Playscape({
                             )}
                             reviews={reviewState.reviews}
                             onOpenGame={(id) => openGame(id)}
-                            checkout={{
-                                state: checkoutState.state,
-                                onRespondToGift: respondToGift,
-                            }}
+                            checkout={{ state: checkoutState.state }}
                             ownedIds={profileOwnedIds}
                             onResetPrototypeData={resetPrototypeData}
                         />

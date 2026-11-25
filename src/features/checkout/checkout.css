@@ -317,34 +317,21 @@
   gap: 6px 18px;
 }
 
-.ps .gift-facts > div { min-width: 0; }
+.ps .gift-facts > div {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 12px;
+  min-width: 0;
+}
 .ps .gift-facts dt { color: var(--muted); font-size: 9px; text-transform: uppercase; letter-spacing: .08em; }
-.ps .gift-facts dd { font-size: 10px; font-weight: 600; word-break: break-word; }
+.ps .gift-facts dd { margin: 0; text-align: right; font-size: 10px; font-weight: 600; word-break: break-word; }
 
 .ps .gift-note {
   margin-top: 10px;
   color: var(--accent);
   font-size: 10px;
   line-height: 1.5;
-}
-
-.ps .gift-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin-top: 12px;
-}
-
-.ps .gift-actions button {
-  min-height: 32px;
-  padding: 7px 12px;
-  font-size: 10px;
-}
-
-.ps .gift-error {
-  margin-top: 8px;
-  color: var(--favorite, #e53955);
-  font-size: 10px;
 }
 
 .ps .gift-purchase .gift-body { align-self: center; }

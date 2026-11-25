@@ -18,7 +18,6 @@ export type GiftStatus = "received" | "accepted" | "declined"
 export type TransactionStatus = "simulated-complete"
 /** Review, fake payment details, then receipt. */
 export type CheckoutStep = "review" | "payment" | "complete"
-export type GiftDecision = Extract<GiftStatus, "accepted" | "declined">
 
 export type CheckoutSession = {
     /** Stable per dialog opening; prevents duplicate submissions. */
@@ -74,10 +73,6 @@ export type CheckoutResult =
     | { ok: true; transaction: PrototypeTransaction }
     | { ok: false; errors: string[] }
 
-export type GiftResponseResult =
-    | { ok: true; transaction: PrototypeTransaction }
-    | { ok: false; errors: string[] }
-
 export const CHECKOUT_DISCLAIMER =
     "PLAYSCAPE Prototype Checkout — No real payment will be processed."
 
@@ -94,7 +89,8 @@ export const PURCHASE_TYPES: ReadonlyArray<{
     {
         id: "gift",
         label: "Gift to a Friend",
-        description: "Create a simulated gift record for one existing PLAYSCAPE friend.",
+        description:
+            "Create a simulated gift record that immediately appears in your friend's local prototype library.",
     },
 ]
 

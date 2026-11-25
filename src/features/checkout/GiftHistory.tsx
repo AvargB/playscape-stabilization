@@ -15,8 +15,6 @@ import {
 import {
     CHECKOUT_DISCLAIMER,
     type CheckoutState,
-    type GiftDecision,
-    type GiftResponseResult,
     type PrototypeTransaction,
 } from "./types"
 
@@ -26,7 +24,6 @@ export interface GiftHistoryProps {
     state: CheckoutState
     renderAvatar?: (props: { id: string; size?: number }) => React.ReactNode
     onOpenGame?: (id: number) => void
-    onRespondToGift?: (id: string, decision: GiftDecision) => GiftResponseResult
     /** Full canonical library supplied by the app; ledger-only when omitted. */
     ownedIds?: number[]
 }
@@ -65,10 +62,8 @@ export default function GiftHistory({
     state,
     renderAvatar,
     onOpenGame,
-    onRespondToGift,
     ownedIds = [],
 }: GiftHistoryProps) {
-    const [responseErrors, setResponseErrors] = React.useState<Record<string, string>>({})
     const received = getReceivedGifts(state, person.id)
     const sent = own ? getSentGifts(state, "you") : []
     const purchases = own ? getPersonalPurchases(state, "you") : []
@@ -83,30 +78,13 @@ export default function GiftHistory({
                 (entry) => entry.gameId === id && entry.giftStatus === "accepted",
             )
         ) {
-            return "Accepted gift"
+            return "Auto-accepted gift"
         }
         return "Seeded prototype game"
     }
 
     function gameTitle(id: number): string {
         return getGameById(id)?.title ?? "Unavailable game"
-    }
-
-    function respond(transaction: PrototypeTransaction, decision: GiftDecision) {
-        if (!onRespondToGift) return
-        const result = onRespondToGift(transaction.id, decision)
-        if (result.ok === false) {
-            setResponseErrors((current) => ({
-                ...current,
-                [transaction.id]: result.errors[0] ?? "This gift response could not be saved.",
-            }))
-            return
-        }
-        setResponseErrors((current) => {
-            const next = { ...current }
-            delete next[transaction.id]
-            return next
-        })
     }
 
     function giftCard(transaction: PrototypeTransaction, direction: "received" | "sent") {
@@ -158,7 +136,7 @@ export default function GiftHistory({
                         <span
                             className={
                                 "gift-status " +
-                                (transaction.giftStatus ?? "received")
+                                (transaction.giftStatus ?? "accepted")
                             }
                         >
                             {giftStatusLabel(transaction.giftStatus)}
@@ -192,39 +170,13 @@ export default function GiftHistory({
                     </dl>
                     {transaction.giftStatus === "accepted" && (
                         <p className="gift-note" role="status">
-                            Accepted — added to {recipientName}’s prototype library. No real
+                            Auto-accepted — added to {recipientName}’s prototype library. No real
                             game license was delivered.
                         </p>
                     )}
                     {transaction.giftStatus === "declined" && (
                         <p className="gift-note">
-                            Declined. The historical prototype record is kept.
-                        </p>
-                    )}
-                    {direction === "received" &&
-                        transaction.recipientId === person.id &&
-                        transaction.giftStatus === "received" &&
-                        onRespondToGift && (
-                            <div className="gift-actions">
-                                <button
-                                    className="primary"
-                                    type="button"
-                                    onClick={() => respond(transaction, "accepted")}
-                                >
-                                    Accept gift
-                                </button>
-                                <button
-                                    className="web-secondary"
-                                    type="button"
-                                    onClick={() => respond(transaction, "declined")}
-                                >
-                                    Decline gift
-                                </button>
-                            </div>
-                        )}
-                    {responseErrors[transaction.id] && (
-                        <p className="gift-error" role="alert">
-                            {responseErrors[transaction.id]}
+                            Declined prototype gift record kept for history.
                         </p>
                     )}
                 </div>
@@ -320,7 +272,7 @@ export default function GiftHistory({
                         <div className="section-head">
                             <h2>Sent gifts</h2>
                             <p className="social-muted">
-                                Historical prototype gift records stay here even if declined.
+                                Historical prototype gift records stay here.
                             </p>
                         </div>
                         {sent.length ? (
@@ -338,7 +290,7 @@ export default function GiftHistory({
                 <div className="section-head">
                     <h2>Prototype library</h2>
                     <p className="social-muted">
-                        Seeded games, simulated purchases, and accepted gifts — tied to canonical game IDs.
+                        Seeded games, simulated purchases, and auto-accepted gifts — tied to canonical game IDs.
                     </p>
                 </div>
                 {libraryIds.length ? (

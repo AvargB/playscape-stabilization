@@ -153,7 +153,7 @@ export function getPrototypeActivity(
                     person: PROTOTYPE_USER_ID,
                     game: transaction.gameId,
                     category: "Acquired games",
-                    action: `accepted ${gameTitle} as a prototype gift`,
+                    action: `received ${gameTitle} as an auto-accepted prototype gift`,
                     time: formatTransactionDate(transaction.createdAt),
                     quote: "Prototype gift — no real game license was delivered.",
                     why: "Accepted gifts appear in the local prototype library.",

@@ -13,7 +13,6 @@ import { gameCatalog } from '../src/data/games.ts'
 import {
     createPrototypeTransaction,
     getOwnedGameIdsByPerson,
-    respondToGift,
 } from '../src/features/checkout/index.ts'
 import {
     buildSocialGraph,
@@ -130,7 +129,7 @@ test('The Web does not show a transaction activity blurb', () => {
     assert.match(html, /Drag to pan/)
 })
 
-test('accepted gifts create owned Web connections and only owned/wishlist lines are highlighted', () => {
+test('auto-accepted gifts create owned Web connections and only owned/wishlist lines are highlighted', () => {
     const gift = createPrototypeTransaction(
         {
             id: 'web-gift',
@@ -143,10 +142,9 @@ test('accepted gifts create owned Web connections and only owned/wishlist lines 
         { id: 'txn-web-gift', now: '2026-11-24T12:00:00.000Z' },
     )
     assert.equal(gift.ok, true)
-    const accepted = respondToGift(gift.transaction, 'accepted')
-    assert.equal(accepted.ok, true)
+    assert.equal(gift.transaction.giftStatus, 'accepted')
     const ownedIdsByPerson = getOwnedGameIdsByPerson({
-        transactions: [accepted.transaction],
+        transactions: [gift.transaction],
         ownedGameIds: [],
     })
 

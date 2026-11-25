@@ -28,7 +28,6 @@ import {
     ownsGame,
     recordPurchase,
     removeOwnership,
-    respondToGift,
     resetPrototypeData,
     saveCheckoutState,
     validateCheckoutSession,
@@ -179,33 +178,27 @@ test('duplicate personal purchases are rejected while distinct editions stay val
     assert.equal(sameStandardAgain, withBoth)
 })
 
-test('gifts grant only the accepting recipient, never the sender', () => {
+test('auto-accepted gifts grant only the recipient, never the sender', () => {
     const gift = transaction('gift', {
         session: { gameId: SLAY, purchaseType: 'gift', recipientId: 'jamie' },
     })
-    const pending = { transactions: [gift], ownedGameIds: [] }
-
-    assert.equal(ownsGame(pending, SLAY, 'you'), false)
-    assert.equal(ownsGame(pending, SLAY, 'jamie'), false)
-
-    const response = respondToGift(gift, 'accepted')
-    assert.equal(response.ok, true)
+    assert.equal(gift.giftStatus, 'accepted')
     const purchase = transaction('gift-activity-purchase')
-    const accepted = {
-        transactions: [response.transaction, purchase],
+    const state = {
+        transactions: [gift, purchase],
         ownedGameIds: [STARDEW],
     }
 
-    assert.equal(ownsGame(accepted, SLAY, 'you'), false)
-    assert.equal(ownsGame(accepted, SLAY, 'jamie'), true)
-    assert.equal(getPrototypeOwnedGameIds(accepted, 'you').includes(SLAY), false)
-    assert.equal(getPrototypeOwnedGameIds(accepted, 'jamie').includes(SLAY), true)
+    assert.equal(ownsGame(state, SLAY, 'you'), false)
+    assert.equal(ownsGame(state, SLAY, 'jamie'), true)
+    assert.equal(getPrototypeOwnedGameIds(state, 'you').includes(SLAY), false)
+    assert.equal(getPrototypeOwnedGameIds(state, 'jamie').includes(SLAY), true)
 
-    const byPerson = getOwnedGameIdsByPerson(accepted)
+    const byPerson = getOwnedGameIdsByPerson(state)
     assert.equal(byPerson.you.includes(SLAY), false)
     assert.equal(byPerson.jamie.includes(SLAY), true)
 
-    const activity = getPrototypeActivity(accepted)
+    const activity = getPrototypeActivity(state)
     assert.equal(new Set(activity.map((item) => item.id)).size, activity.length)
     assert.ok(activity.some((item) => item.category === 'Prototype gifts'))
     assert.ok(activity.some((item) => item.category === 'Acquired games'))
@@ -216,9 +209,8 @@ test('purchase records persist, restore, and never include sensitive payment det
     const gift = transaction('persist-gift', {
         session: { gameId: SLAY, purchaseType: 'gift', recipientId: 'jamie' },
     })
-    const accepted = respondToGift(gift, 'accepted').transaction
     const state = {
-        transactions: [purchase, accepted],
+        transactions: [purchase, gift],
         ownedGameIds: [STARDEW],
     }
     const harness = installStorage()

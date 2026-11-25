@@ -29,7 +29,6 @@ import {
     getReceivedGifts,
     loadCheckoutState,
     normalizePersistedCheckout,
-    respondToGift,
     saveCheckoutState,
     validateCheckoutSession,
 } from '../src/features/checkout/index.ts'
@@ -114,7 +113,7 @@ function renderProfileGifts({ id = 'jamie', state = createEmptyCheckoutState() }
             renderAvatar: () => null,
             renderSmallGame: () => null,
             renderActivityCard: () => null,
-            checkout: { state, onRespondToGift() { return { ok: false, errors: [] } } },
+            checkout: { state },
         }),
     )
 }
@@ -328,7 +327,7 @@ test('gift checkout creates a canonical gift record for an existing friend only'
     assert.equal(transaction.type, 'gift')
     assert.equal(transaction.recipientId, 'jamie')
     assert.equal(transaction.giftMessage, 'Hope you love this one.')
-    assert.equal(transaction.giftStatus, 'received')
+    assert.equal(transaction.giftStatus, 'accepted')
     assert.equal(transaction.delivery, 'immediate')
     assert.equal(transaction.status, 'simulated-complete')
 
@@ -383,14 +382,11 @@ test('duplicate ledger records and duplicate submissions are rejected', () => {
     assert.equal(state.transactions.length, 1)
     assert.equal(ignored.length, 1)
     assert.equal(state.transactions[0].sessionId, 'duplicate-session')
-
-    const accepted = respondToGift(transaction, 'accepted')
-    assert.equal(accepted.ok, true)
-    const secondAccept = respondToGift(accepted.transaction, 'accepted')
-    assert.equal(secondAccept.ok, false)
+    assert.equal(state.transactions[0].giftStatus, 'accepted')
+    assert.deepEqual(getOwnedGameIds(state, 'alex'), [STARDEW])
 })
 
-test('received gifts appear on the recipient profile with sender and status', () => {
+test('auto-accepted gifts appear on the recipient profile with sender and status', () => {
     const transaction = createTransaction({
         id: 'txn-received',
         session: {
@@ -405,25 +401,25 @@ test('received gifts appear on the recipient profile with sender and status', ()
 
     assert.match(html, /Received Gifts/)
     assert.match(html, /data-gift-id="txn-received"/)
+    assert.match(html, /data-gift-status="accepted"/)
     assert.match(html, /A trail for you/)
     assert.match(html, /Sarah Chen/)
-    assert.match(html, /Received/)
-    assert.match(html, /Accept gift/)
-    assert.match(html, /Decline gift/)
+    assert.match(html, /Received gift/)
+    assert.match(html, /Auto-accepted/)
+    assert.doesNotMatch(html, /Accept gift/)
+    assert.doesNotMatch(html, /Decline gift/)
     assert.equal(getReceivedGifts(state, 'jamie').length, 1)
 })
 
-test('accepting a gift adds it to the recipient prototype library without a real license', () => {
+test('a gift is owned by the recipient immediately without a real license', () => {
     const transaction = createTransaction({
         id: 'txn-accepted',
         session: { id: 'gift-accepted', purchaseType: 'gift', recipientId: 'jamie' },
     })
-    const accepted = respondToGift(transaction, 'accepted')
-    assert.equal(accepted.ok, true)
-    const state = { transactions: [accepted.transaction], ownedGameIds: [] }
+    const state = { transactions: [transaction], ownedGameIds: [] }
     const html = renderProfileGifts({ id: 'jamie', state })
 
-    assert.match(html, /Accepted/)
+    assert.match(html, /Auto-accepted/)
     assert.match(html, /added to Jamie Lee’s prototype library/)
     assert.match(html, /No real game license was delivered/)
     assert.match(html, /Prototype library/)
@@ -432,7 +428,7 @@ test('accepting a gift adds it to the recipient prototype library without a real
     assert.deepEqual(getOwnedGameIds(state, 'jamie'), [STARDEW])
 })
 
-test('a friend profile overview shows an accepted gift in their owned library', () => {
+test('a friend profile overview shows an auto-accepted gift in their owned library', () => {
     const transaction = createTransaction({
         id: 'txn-overview-gift',
         session: {
@@ -441,9 +437,7 @@ test('a friend profile overview shows an accepted gift in their owned library', 
             recipientId: 'jamie',
         },
     })
-    const accepted = respondToGift(transaction, 'accepted')
-    assert.equal(accepted.ok, true)
-    const state = { transactions: [accepted.transaction], ownedGameIds: [] }
+    const state = { transactions: [transaction], ownedGameIds: [] }
     const ownedIds = getOwnedGameIdsByPerson(state).jamie
     const html = renderToStaticMarkup(
         React.createElement(Profiles, {
@@ -459,7 +453,7 @@ test('a friend profile overview shows an accepted gift in their owned library', 
             renderSmallGame: ({ id, reason }) =>
                 React.createElement('span', { 'data-owned-game': id, 'data-reason': reason }),
             renderActivityCard: () => null,
-            checkout: { state, onRespondToGift() { return { ok: false, errors: [] } } },
+            checkout: { state },
             ownedIds,
         }),
     )
@@ -468,23 +462,22 @@ test('a friend profile overview shows an accepted gift in their owned library', 
     assert.match(html, /data-owned-game="413150"/)
 })
 
-test('declining a gift keeps the record and prevents duplicate acceptance', () => {
+test('legacy received gifts upgrade to auto-accepted on reload', () => {
     const transaction = createTransaction({
-        id: 'txn-declined',
-        session: { id: 'gift-declined', purchaseType: 'gift', recipientId: 'alex' },
+        id: 'txn-legacy-gift',
+        session: { id: 'gift-legacy', purchaseType: 'gift', recipientId: 'alex' },
     })
-    const declined = respondToGift(transaction, 'declined')
-    assert.equal(declined.ok, true)
-    const html = renderProfileGifts({
-        id: 'alex',
-        state: { transactions: [declined.transaction], ownedGameIds: [] },
+    const legacy = { ...transaction, giftStatus: 'received' }
+    const { state } = normalizePersistedCheckout({
+        transactions: [legacy],
+        ownedGameIds: [],
     })
 
-    assert.match(html, /Declined/)
-    assert.match(html, /historical prototype record is kept/)
+    assert.equal(state.transactions[0].giftStatus, 'accepted')
+    assert.deepEqual(getOwnedGameIds(state, 'alex'), [STARDEW])
+    const html = renderProfileGifts({ id: 'alex', state })
+    assert.match(html, /Auto-accepted/)
     assert.doesNotMatch(html, /Accept gift<\/button>/)
-    assert.equal(respondToGift(declined.transaction, 'accepted').ok, false)
-    assert.deepEqual(getOwnedGameIds({ transactions: [declined.transaction], ownedGameIds: [] }, 'alex'), [])
 })
 
 test('empty history states do not invent purchases, gifts, or ownership', () => {
@@ -520,10 +513,8 @@ test('transactions and gift status persist across a simulated refresh', () => {
         id: 'txn-persist-gift',
         session: { id: 'persist-gift', purchaseType: 'gift', recipientId: 'casey', gameId: SHORT_HIKE },
     })
-    const accepted = respondToGift(gift, 'accepted')
-    assert.equal(accepted.ok, true)
     const savedState = {
-        transactions: [purchase, accepted.transaction],
+        transactions: [purchase, gift],
         ownedGameIds: [STARDEW],
     }
     const harness = installStorage()
@@ -626,6 +617,18 @@ test('checkout feature modules rely on the shared storage owner', () => {
     assert.match(types, /playscape-checkout-v1/)
     assert.doesNotMatch(types, /playscape-(social|community|reviews|compare)/)
     assert.doesNotMatch(storage, /playscape-(social|community|reviews|compare)/)
+})
+
+test('gift and purchase fact labels stay aligned with their values', () => {
+    const css = readFileSync(path.join(srcRoot, 'features/checkout/checkout.css'), 'utf8')
+    assert.match(
+        css,
+        /\.ps \.gift-facts > div \{[\s\S]*?display: flex[\s\S]*?justify-content: space-between[\s\S]*?align-items: baseline/,
+    )
+    assert.match(
+        css,
+        /\.ps \.gift-facts dd \{[^}]*margin: 0[^}]*text-align: right/,
+    )
 })
 
 test('checkout UI stays accessible and responsive', () => {

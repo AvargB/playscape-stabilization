@@ -146,7 +146,9 @@ const normalizeTransaction = (
         status: "simulated-complete",
         giftMessage,
         delivery: "immediate",
-        giftStatus: entry.giftStatus as GiftStatus,
+        /* Gifts no longer wait for a response. A legacy "received" record is
+           upgraded so existing prototype gifts become recipient-owned too. */
+        giftStatus: entry.giftStatus === "received" ? "accepted" : (entry.giftStatus as GiftStatus),
     }
 }
 

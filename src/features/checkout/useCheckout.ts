@@ -7,7 +7,6 @@ import {
     getOwnedGameIds as getLedgerOwnedGameIds,
     getPersonalPurchases,
     getSentGifts,
-    respondToGift as respondToGiftRecord,
 } from "./model"
 import {
     getOwnedGameIdsByPerson,
@@ -29,8 +28,6 @@ import type {
     CheckoutResult,
     CheckoutSession,
     CheckoutState,
-    GiftDecision,
-    GiftResponseResult,
     PrototypeTransaction,
 } from "./types"
 
@@ -46,7 +43,6 @@ export type CheckoutApi = {
     personalPurchases: PrototypeTransaction[]
     sentGifts: PrototypeTransaction[]
     completeCheckout: (session: CheckoutSession) => CheckoutResult
-    respondToGift: (id: string, decision: GiftDecision) => GiftResponseResult
     /** Shared ownership selectors, always bound to the live ledger. */
     ownsGame: (gameId: number) => boolean
     getOwnedGames: () => GameRecord[]
@@ -78,7 +74,6 @@ export function useCheckout({ games = gameCatalog }: UseCheckoutOptions = {}): C
     const stateRef = React.useRef(state)
     stateRef.current = state
     const submittingRef = React.useRef<string | null>(null)
-    const respondingRef = React.useRef<string | null>(null)
     const skipPersistRef = React.useRef(false)
 
     React.useEffect(() => {
@@ -124,41 +119,6 @@ export function useCheckout({ games = gameCatalog }: UseCheckoutOptions = {}): C
             }
         },
         [games],
-    )
-
-    const respondToGift = React.useCallback(
-        (id: string, decision: GiftDecision): GiftResponseResult => {
-            if (respondingRef.current === id) {
-                return { ok: false, errors: ["This gift response is already being saved."] }
-            }
-            const existing = stateRef.current.transactions.find(
-                (transaction) => transaction.id === id,
-            )
-            if (!existing) {
-                return { ok: false, errors: ["That prototype gift could not be found."] }
-            }
-
-            respondingRef.current = id
-            try {
-                const result = respondToGiftRecord(existing, decision)
-                if (!result.ok) return result
-
-                const nextTransactions = stateRef.current.transactions.map((transaction) =>
-                    transaction.id === id ? result.transaction : transaction,
-                )
-                const next: CheckoutState = {
-                    transactions: nextTransactions,
-                    ownedGameIds: [],
-                }
-                next.ownedGameIds = getLedgerOwnedGameIds(next)
-                stateRef.current = next
-                setState(next)
-                return result
-            } finally {
-                respondingRef.current = null
-            }
-        },
-        [],
     )
 
     const commit = React.useCallback((next: CheckoutState) => {
@@ -224,7 +184,6 @@ export function useCheckout({ games = gameCatalog }: UseCheckoutOptions = {}): C
         personalPurchases,
         sentGifts,
         completeCheckout,
-        respondToGift,
         ownsGame,
         getOwnedGames,
         getOwnedGameIds,

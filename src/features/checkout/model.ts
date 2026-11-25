@@ -9,8 +9,6 @@ import {
     type CheckoutSession,
     type CheckoutState,
     type CheckoutSummary,
-    type GiftDecision,
-    type GiftResponseResult,
     type GiftStatus,
     type PrototypeTransaction,
     type PurchaseType,
@@ -228,32 +226,11 @@ export function createPrototypeTransaction(
         status: "simulated-complete",
         giftMessage: gift && session.giftMessage.trim() ? session.giftMessage.trim() : null,
         delivery: gift ? "immediate" : null,
-        giftStatus: gift ? "received" : null,
+        /* Prototype gifts are accepted at creation; the recipient owns the game
+           immediately through the derived per-person ownership helpers. */
+        giftStatus: gift ? "accepted" : null,
     }
     return { ok: true, transaction }
-}
-
-export function respondToGift(
-    transaction: PrototypeTransaction,
-    decision: GiftDecision,
-): GiftResponseResult {
-    if (transaction.type !== "gift") {
-        return { ok: false, errors: ["Only gift records can be accepted or declined."] }
-    }
-    if (decision !== "accepted" && decision !== "declined") {
-        return { ok: false, errors: ["Choose accept or decline."] }
-    }
-    if (transaction.giftStatus !== "received") {
-        return {
-            ok: false,
-            errors: [
-                transaction.giftStatus
-                    ? `This gift was already ${transaction.giftStatus}.`
-                    : "This gift is still awaiting a response.",
-            ],
-        }
-    }
-    return { ok: true, transaction: { ...transaction, giftStatus: decision } }
 }
 
 export function getPersonalPurchases(

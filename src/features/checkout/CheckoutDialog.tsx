@@ -473,7 +473,7 @@ export default function CheckoutDialog({
                                 <dd>
                                     {
                                         GIFT_STATUS_LABELS[
-                                            (entry.giftStatus ?? "received") as GiftStatus
+                                            (entry.giftStatus ?? "accepted") as GiftStatus
                                         ]
                                     }
                                 </dd>
@@ -828,8 +828,8 @@ export default function CheckoutDialog({
                                         </p>
                                         <p className="chk-gift-status" role="status">
                                             {recipient
-                                                ? `To ${recipient.name} · Immediate, prototype only. No email or delivery.`
-                                                : "Choose a friend · Immediate, prototype only. No email or delivery."}
+                                                ? `To ${recipient.name} · Immediate, prototype only. No email or delivery. Their local library updates right away.`
+                                                : "Choose a friend · Immediate, prototype only. No email or delivery. Their local library updates right away."}
                                         </p>
                                     </div>
                                 )}
