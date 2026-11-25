@@ -225,7 +225,7 @@ test('03 only owners and wishlisters can author a review', () => {
 
 test('04 no opinion is inferred from ownership, wishlists, recommendations, or activity', () => {
     const you = socialPeople.find((person) => person.id === 'you')
-    assert.equal(getReviewRelationship(you, STARDEW), 'wishlisted')
+    assert.equal(getReviewRelationship(you, STARDEW), 'owns')
     const empty = buildReviewBreakdown([])
     assert.equal(empty.reviewCount, 0)
     assert.equal(empty.overallAverage, null)

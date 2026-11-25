@@ -4,7 +4,6 @@ import { Icon } from "../../components/Icon"
 import { type GameRecord } from "../../data/games"
 import {
     socialPeople,
-    type SocialActivity,
     type SocialGraph,
     type SocialGraphNode,
     type SocialPerson,
@@ -55,7 +54,6 @@ export interface TheWebProps {
         state: SocialState
         /** Prototype ledger overlays; never stored in the social graph itself. */
         ownedIdsByPerson?: Record<string, number[]>
-        prototypeActivity?: SocialActivity[]
     }
 }
 
@@ -869,25 +867,6 @@ export default function TheWeb({
                         Reset view
                     </button>
                 </div>
-
-                {community.prototypeActivity && community.prototypeActivity.length > 0 && (
-                    <section className="webgraph-activity" aria-label="Prototype purchase activity">
-                        <strong>Prototype purchase activity</strong>
-                        <div className="webgraph-links">
-                            {community.prototypeActivity.slice(0, 6).map((item) => (
-                                <button
-                                    key={item.id}
-                                    className="webgraph-link"
-                                    data-web-activity={item.id}
-                                    onClick={() => setSelected(String(item.game))}
-                                >
-                                    <span>{item.category}</span>
-                                    {item.action}
-                                </button>
-                            ))}
-                        </div>
-                    </section>
-                )}
 
                 <p className="webgraph-hint">Drag to pan · Scroll or pinch to zoom</p>
 

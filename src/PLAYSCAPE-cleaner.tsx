@@ -1093,17 +1093,6 @@ export default function Playscape({
         () => checkoutState.getOwnedGameIdsByPerson(),
         [checkoutState.state],
     )
-    const prototypeActivity = React.useMemo(
-        () => checkoutState.getPrototypeActivity(),
-        [checkoutState.getPrototypeActivity],
-    )
-    const combinedActivity = React.useMemo(() => {
-        const events = [...prototypeActivity, ...social.activity]
-        return events.filter(
-            (item, index) => events.findIndex((entry) => entry.id === item.id) === index,
-        )
-    }, [prototypeActivity, social.activity])
-
     React.useEffect(() => {
         const stale = cart.items.filter((item) => ownedSet.has(item.gameId))
         if (!stale.length) return
@@ -1296,7 +1285,6 @@ export default function Playscape({
         <CommunityContext.Provider
             value={{
                 ...social,
-                activity: combinedActivity,
                 initialCircleTab,
                 webFocus,
                 activeView: view,
@@ -2483,7 +2471,6 @@ export default function Playscape({
                                 graph: social.graph,
                                 state: social.state,
                                 ownedIdsByPerson,
-                                prototypeActivity,
                             }}
                         />
                     )}
@@ -2506,7 +2493,7 @@ export default function Playscape({
                         <Profiles
                             id={profileId}
                             social={{
-                                activity: combinedActivity,
+                                activity: social.activity,
                                 state: social.state,
                                 saved: social.saved,
                                 go: social.go,

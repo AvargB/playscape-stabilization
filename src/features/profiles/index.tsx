@@ -254,6 +254,11 @@ export default function PlayerProfile({
                                             <p role="status">
                                                 Owned games: {ownedIds.length}. Personal purchases and accepted gifts appear here immediately.
                                             </p>
+                                            <div className="social-game-grid">
+                                                {ownedIds.map((id) => (
+                                                    <RenderSmallGame key={id} id={id} reason="Owned" />
+                                                ))}
+                                            </div>
                                             <button
                                                 className="web-secondary"
                                                 onClick={() => setTab(giftsTab)}

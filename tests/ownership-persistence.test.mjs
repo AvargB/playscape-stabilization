@@ -39,8 +39,12 @@ import { clearPrototypeStorage } from '../src/prototypeReset.ts'
 
 const srcRoot = new URL('../src/', import.meta.url)
 const STARDEW = 413150
+const FIREWATCH = 383870
+const SEA_OF_THIEVES = 1172620
+const HADES = 1145360
 const SLAY = 646570
-const SEEDED = 1145360
+const FROSTPUNK = 323190
+const SEEDED_IDS = [STARDEW, FIREWATCH, SEA_OF_THIEVES, HADES]
 const NOW = '2026-11-24T12:00:00.000Z'
 
 function installStorage(initial = {}) {
@@ -90,13 +94,13 @@ test('ownership helpers derive canonical ownership from seeded profile and ledge
     const purchase = transaction('stardew')
     const state = { transactions: [purchase], ownedGameIds: [STARDEW] }
 
-    assert.equal(ownsGame(state, SEEDED), true)
+    assert.equal(ownsGame(state, HADES), true)
     assert.equal(ownsGame(state, STARDEW), true)
     assert.equal(ownsGame(state, SLAY), false)
     assert.equal(ownsGame(state, Number.NaN), false)
     assert.equal(ownsGame(state, String(STARDEW)), false)
 
-    const expected = sorted([SEEDED, 383870, STARDEW])
+    const expected = sorted(SEEDED_IDS)
     assert.deepEqual(sorted(getPrototypeOwnedGameIds(state)), expected)
     assert.deepEqual(sorted(getOwnedGames(state).map((game) => game.id)), expected)
 
@@ -116,42 +120,44 @@ test('bound ownership API keeps its selectors in sync after every action', () =>
             changes += 1
         },
     })
-    const purchase = transaction('api')
+    const purchase = transaction('api', { session: { gameId: SLAY } })
 
-    assert.equal(api.ownsGame(SEEDED), true)
-    assert.equal(api.ownsGame(STARDEW), false)
+    assert.equal(api.ownsGame(HADES), true)
+    assert.equal(api.ownsGame(SLAY), false)
 
     api.recordPurchase(purchase)
     assert.equal(changes, 1)
-    assert.equal(api.ownsGame(STARDEW), true)
+    assert.equal(api.ownsGame(SLAY), true)
     assert.equal(api.getPurchaseHistory().length, 1)
 
     api.recordPurchase(purchase)
     assert.equal(changes, 1)
 
-    api.removeOwnership(STARDEW)
-    assert.equal(api.ownsGame(STARDEW), false)
+    api.removeOwnership(SLAY)
+    assert.equal(api.ownsGame(SLAY), false)
     assert.equal(changes, 2)
-    assert.equal(api.ownsGame(SEEDED), true)
+    assert.equal(api.ownsGame(HADES), true)
 })
 
 test('duplicate personal purchases are rejected while distinct editions stay valid', () => {
-    const standard = transaction('standard')
-    const duplicate = createPrototypeTransaction(session('duplicate'), {
-        state: { transactions: [standard], ownedGameIds: [STARDEW] },
+    const standard = transaction('standard', { session: { gameId: SLAY } })
+    const duplicate = createPrototypeTransaction(session('duplicate', { gameId: SLAY }), {
+        state: { transactions: [standard], ownedGameIds: [SLAY] },
         now: NOW,
     })
     assert.equal(duplicate.ok, false)
     assert.ok(duplicate.errors.some((error) => /already in your prototype library/.test(error)))
 
-    const seeded = createPrototypeTransaction(session('seeded', { gameId: SEEDED }), {
+    const seeded = createPrototypeTransaction(session('seeded', { gameId: STARDEW }), {
         state: createEmptyCheckoutState(),
         now: NOW,
     })
     assert.equal(seeded.ok, false)
     assert.ok(seeded.errors.some((error) => /already in your prototype library/.test(error)))
 
-    const deluxe = transaction('deluxe', { session: { edition: 'Deluxe Edition' } })
+    const deluxe = transaction('deluxe', {
+        session: { gameId: SLAY, edition: 'Deluxe Edition' },
+    })
     const withBoth = recordPurchase(
         recordPurchase(createEmptyCheckoutState(), standard),
         deluxe,
@@ -159,10 +165,10 @@ test('duplicate personal purchases are rejected while distinct editions stay val
     assert.equal(withBoth.transactions.length, 2)
     assert.deepEqual(
         getPrototypeOwnedEditions(withBoth)
-            .filter((entry) => entry.gameId === STARDEW)
+            .filter((entry) => entry.gameId === SLAY)
             .map((entry) => entry.edition)
             .sort(),
-        [getGameEdition(getGameById(STARDEW)), 'Deluxe Edition'].sort(),
+        [getGameEdition(getGameById(SLAY)), 'Deluxe Edition'].sort(),
     )
 
     const sameStandardAgain = recordPurchase(withBoth, {

@@ -1,5 +1,6 @@
 import test from 'node:test'
 import assert from 'node:assert/strict'
+import { readFileSync } from 'node:fs'
 
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -109,6 +110,18 @@ test('only the active node shows a permanent label in the spacious graph', () =>
     assert.match(html, /aria-label="Zoom out"/)
     assert.match(html, /aria-label="Zoom in"/)
     assert.match(html, /Reset view/)
+})
+
+test('The Web does not show a transaction activity blurb', () => {
+    const html = decodeHtml(renderWeb(createEmptySocialState()))
+    const source = readFileSync(new URL('../src/features/the-web/index.tsx', import.meta.url), 'utf8')
+
+    assert.doesNotMatch(html, /Prototype purchase activity/)
+    assert.doesNotMatch(html, /data-web-activity/)
+    assert.doesNotMatch(html, /Acquired games/)
+    assert.doesNotMatch(source, /prototypeActivity/)
+    assert.doesNotMatch(source, /webgraph-activity/)
+    assert.match(html, /Drag to pan/)
 })
 
 test('person similarity uses Jaccard overlap and layout is deterministic', () => {

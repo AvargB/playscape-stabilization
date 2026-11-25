@@ -714,14 +714,6 @@
 .ps .ps-reset-confirm p { color: var(--text); font-size: 12px; line-height: 1.6; }
 .ps .ps-reset-confirm .ps-reset-actions { margin-top: 0; }
 
-.ps .webgraph-activity {
-  margin: 0 23px 12px;
-  padding: 12px 14px;
-  border: 1px solid var(--line);
-  border-radius: 12px;
-  background: color-mix(in srgb, var(--surface) 85%, transparent);
-}
-.ps .webgraph-activity > strong { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
 .ps .webgraph-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
 .ps .webgraph-link {
   display: inline-flex;
