@@ -22,6 +22,7 @@ import {
     transactionReference,
     validateCheckoutSession,
 } from "./model"
+import { playUiSound } from "../sound/uiSounds"
 
 export interface CheckoutDialogProps {
     /** Single-game entry point. Kept for direct game/compare checkout. */
@@ -124,6 +125,14 @@ export default function CheckoutDialog({
     const [submitting, setSubmitting] = React.useState(false)
     const [completed, setCompleted] = React.useState<PrototypeTransaction[]>(completedTransactions)
     const submitLock = React.useRef(false)
+    const previousStep = React.useRef(step)
+
+    React.useEffect(() => {
+        if (step === "complete" && previousStep.current !== "complete") {
+            playUiSound("success")
+        }
+        previousStep.current = step
+    }, [step])
 
     const filteredFriends = React.useMemo(() => {
         const query = friendQuery.trim().toLowerCase()
@@ -549,7 +558,12 @@ export default function CheckoutDialog({
                             >
                                 Back
                             </button>
-                            <button className="primary" type="submit" disabled={submitting}>
+                            <button
+                                className="primary"
+                                type="submit"
+                                data-sound="none"
+                                disabled={submitting}
+                            >
                                 {submitting
                                     ? "Saving prototype record…"
                                     : isGift
