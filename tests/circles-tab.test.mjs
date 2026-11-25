@@ -70,7 +70,7 @@ function renderCircles({ circleId = '', social = makeSocial() } = {}) {
 test('Gaming Circles directory renders every circle with its own topic and membership state', () => {
     const html = renderCircles()
 
-    assert.match(html, /Find your kind of company/)
+    assert.match(html, /<h1>Gaming Circles<\/h1>/)
     assert.match(html, /Create a Gaming Circle/)
     assert.match(html, /Your circles/)
     assert.match(html, /Discover circles/)
@@ -83,6 +83,38 @@ test('Gaming Circles directory renders every circle with its own topic and membe
     assert.match(html, /Explore circle/)
     assert.match(html, /Leave circle/)
     assert.match(html, /Join circle/)
+})
+
+test('Gaming Circles copy avoids canned taglines', () => {
+    const html = [
+        renderCircles(),
+        renderCircles({ circleId: 'afterhours' }),
+        renderCircles({
+            circleId: 'tactics',
+            social: makeSocial({ initialCircleTab: 'Group Finder' }),
+        }),
+    ].join(' ')
+    const taglines = [
+        'Low pressure. Good company.',
+        'For the beautifully distracted.',
+        'Stories worth talking about.',
+        'Patient plans. Hard lessons.',
+        'A shared world starts here.',
+        'Small circles. Shared worlds.',
+        'One game. Everyone included.',
+        'Saved together. Decided together.',
+        'A small conversation, not a noisy channel.',
+        'View gaming identity',
+    ]
+    for (const tagline of taglines) {
+        assert.equal(html.includes(tagline), false, `unexpected tagline: ${tagline}`)
+    }
+
+    const socialData = readFileSync(
+        new URL('../src/socialData.ts', import.meta.url),
+        'utf8',
+    )
+    assert.doesNotMatch(socialData, /Low pressure\. Good company\./)
 })
 
 test('joined circles come first and pending invitations are labelled', () => {
@@ -125,7 +157,7 @@ test('an individual circle renders its cover, sections, activity, games, and mem
     assert.match(html, /is plotting a colder kind of city/)
     assert.match(html, /data-game="323190"/)
     assert.match(html, /Playing together/)
-    assert.match(html, /The friends in it/)
+    assert.match(html, /<h2>Members<\/h2>/)
     assert.match(html, /data-person="casey" data-size="30"/)
     assert.match(html, /Shared recommendations/)
     assert.match(html, /Recommend to the circle/)
@@ -148,7 +180,7 @@ test('Shared wishlist and discussions render from the shared social state', () =
         circleId: 'tactics',
         social: makeSocial({ initialCircleTab: 'Shared wishlist' }),
     })
-    assert.match(wishlist, /Our next possibilities/)
+    assert.match(wishlist, /<h2>Shared wishlist<\/h2>/)
     assert.match(wishlist, /Frostpunk/)
     assert.match(wishlist, /Bannerlord/)
     assert.match(wishlist, /Slay the Spire/)
@@ -158,7 +190,7 @@ test('Shared wishlist and discussions render from the shared social state', () =
         circleId: 'afterhours',
         social: makeSocial({ initialCircleTab: 'Discussions' }),
     })
-    assert.match(discussions, /What should we play next/)
+    assert.match(discussions, /<h2>Discussions<\/h2>/)
     assert.match(discussions, /A farm night or a pirate crew this weekend/)
     assert.match(discussions, /Join the conversation/)
     assert.match(discussions, /Post to circle/)
@@ -171,7 +203,7 @@ test('Group Finder respects the current circle size instead of implying absent p
         social: makeSocial({ initialCircleTab: 'Group Finder' }),
     })
 
-    assert.match(html, /One game\. Everyone included\./)
+    assert.match(html, /<h2>Find a game for this circle<\/h2>/)
     assert.match(html, /0 group matches/)
     assert.doesNotMatch(html, /data-game="413150"/)
     assert.match(html, /No exact match in this sample collection/)
@@ -179,7 +211,7 @@ test('Group Finder respects the current circle size instead of implying absent p
 
 test('unknown circle ids fall back to the directory', () => {
     const html = renderCircles({ circleId: 'missing-circle' })
-    assert.match(html, /Find your kind of company/)
+    assert.match(html, /<h1>Gaming Circles<\/h1>/)
     assert.doesNotMatch(html, /Gaming Circles \/ /)
 })
 

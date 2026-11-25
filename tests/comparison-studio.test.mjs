@@ -392,6 +392,10 @@ test('comparison UI is keyboard-accessible and responsive in static rendering an
 
     const navigation = readFileSync(path.join(srcRoot, 'components/navigation/MainNavigation.tsx'), 'utf8')
     assert.match(navigation, /"Compare"/)
+    assert.match(navigation, /aria-label="Store pages"/)
+    const browse = readFileSync(path.join(srcRoot, 'features/browse/index.tsx'), 'utf8')
+    assert.match(browse, /changeView\("Compare"\)/)
+    assert.match(browse, /Compare games/)
     const app = readFileSync(path.join(srcRoot, 'PLAYSCAPE-cleaner.tsx'), 'utf8')
     assert.match(app, /compare:\s*"Compare"/)
     assert.match(app, /view === "Compare"/)

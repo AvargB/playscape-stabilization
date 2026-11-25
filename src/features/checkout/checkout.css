@@ -699,3 +699,65 @@
   .ps .chk-footer button { flex: 1 1 auto; }
   .ps .chk-footer .web-secondary:first-child { margin-right: 0; }
 }
+
+/* Phone receipts: keep the artwork, people, and facts readable in one column. */
+@media (max-width: 760px) {
+  .ps .chk-complete { display: grid; gap: 12px; }
+  .ps .chk-receipt {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+    align-items: start;
+    padding: 14px;
+  }
+  .ps .chk-receipt img {
+    max-height: none;
+    aspect-ratio: 1.92;
+    border-radius: 9px;
+  }
+  .ps .chk-receipt .chk-success-icon {
+    left: 8px;
+    top: 8px;
+    width: 32px;
+    height: 32px;
+  }
+  .ps .checkout-modal .chk-receipt h3 {
+    font-size: 20px;
+    overflow-wrap: anywhere;
+  }
+  .ps .chk-person,
+  .ps .chk-person > span:not(.social-avatar) { min-width: 0; }
+  .ps .chk-person strong,
+  .ps .chk-person small { overflow-wrap: anywhere; }
+  .ps .chk-receipt-facts { margin-top: 14px; }
+  .ps .chk-receipt-facts > div {
+    flex-wrap: wrap;
+    gap: 4px 12px;
+    padding: 9px 0;
+    font-size: 11px;
+  }
+  .ps .chk-receipt-facts dt,
+  .ps .chk-receipt-facts dd { min-width: 0; }
+  .ps .chk-receipt-facts dd { margin-left: auto; text-align: right; }
+  .ps .chk-receipt-facts dd[data-transaction-reference] {
+    font-size: 10px;
+    overflow-wrap: anywhere;
+  }
+  .ps .chk-message { margin-top: 12px; font-size: 16px; }
+  .ps .chk-footer {
+    flex-direction: column;
+    align-items: stretch;
+    flex-wrap: nowrap;
+    justify-content: stretch;
+  }
+  .ps .chk-footer button { width: 100%; flex: 0 0 auto; }
+  .ps .chk-footer .web-secondary:first-child { margin-right: 0; }
+}
+
+@media (max-width: 480px) {
+  .ps .modal.checkout-modal { padding: 20px 14px; }
+  .ps .checkout-modal .modal-head h2 { font-size: 26px; }
+  .ps .chk-receipt { padding: 12px; gap: 12px; }
+  .ps .checkout-modal .chk-receipt h3 { font-size: 18px; }
+  .ps .chk-footer .primary,
+  .ps .chk-footer .web-secondary { min-height: 44px; padding: 11px 16px; }
+}

@@ -862,7 +862,8 @@ export default function Playscape({
     const isCurrent = (n: string) =>
         n === view ||
         (n === "Community" &&
-            ["Gaming Circles", "Profile"].includes(view))
+            ["The Web", "Gaming Circles"].includes(view)) ||
+        (n === "Browse" && view === "Compare")
     const scrollMemory = React.useRef<Record<string, number>>({}),
         lastRoute = React.useRef("")
     React.useEffect(() => {

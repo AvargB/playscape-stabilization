@@ -127,10 +127,7 @@ function CircleCard({
                     {circle.members.length} members
                 </span>
             </div>
-            <div className="kicker">
-                {circle.topic}
-                {circle.tag ? ` · ${circle.tag}` : ""}
-            </div>
+            <div className="kicker">{circle.topic}</div>
             <h2>{circle.name}</h2>
             <p>{circle.desc}</p>
             <div className="row-actions">
@@ -173,11 +170,11 @@ function CircleDirectory({
     return (
         <main className="social-page">
             <header className="social-heading">
-                <div className="kicker">Small circles. Shared worlds.</div>
-                <h1>Find your kind of company.</h1>
+                <div className="kicker">Your circles</div>
+                <h1>Gaming Circles</h1>
                 <p>
-                    Your circles come first. Open circles and invitations stay below,
-                    so you never have to hunt for the people you already play with.
+                    Your joined circles are listed first, followed by open circles
+                    and invitations.
                 </p>
                 <div className="social-heading-actions">
                     <button
@@ -193,9 +190,9 @@ function CircleDirectory({
             <section className="circle-section" aria-labelledby="your-circles-heading">
                 <div className="section-head">
                     <div>
-                        <div className="kicker">Closest to you</div>
+                        <div className="kicker">Joined</div>
                         <h2 id="your-circles-heading">Your circles</h2>
-                        <p>The shared worlds you are already part of.</p>
+                        <p>Circles you are already part of.</p>
                     </div>
                     <span className="circle-count">{joinedCircles.length} joined</span>
                 </div>
@@ -224,9 +221,9 @@ function CircleDirectory({
                 >
                     <div className="section-head">
                         <div>
-                            <div className="kicker">Open to you</div>
+                            <div className="kicker">Available</div>
                             <h2 id="discover-circles-heading">Discover circles</h2>
-                            <p>Invitations and open circles, kept below your own.</p>
+                            <p>Open circles and invitations you can join.</p>
                         </div>
                         <span className="circle-count">{openCircles.length} open</span>
                     </div>
@@ -279,11 +276,11 @@ function GroupFinder({
 
     return (
         <section className="group-finder">
-            <div className="kicker">Experience Finder / together</div>
-            <h2>One game. Everyone included.</h2>
+            <div className="kicker">Find a game</div>
+            <h2>Find a game for this circle</h2>
             <p className="social-muted">
-                Find a shared world that fits your friends, platforms, and
-                pockets. Group size is checked against this circle’s current members.
+                Filter by play style, genre, mood, and player count. Results use
+                this circle’s current members.
             </p>
             <form
                 onSubmit={(event) => {
@@ -456,7 +453,7 @@ function CirclePage({
             </button>
             <header className="circle-cover">
                 <div className="kicker">
-                    {circle.tag} · {circle.topic} · {circle.members.length} members
+                    {circle.topic} · {circle.members.length} members
                 </div>
                 <h1>{circle.name}</h1>
                 <p>{circle.desc}</p>
@@ -513,8 +510,8 @@ function CirclePage({
                         <>
                             <div className="section-head">
                                 <div>
-                                    <h2>Our next possibilities</h2>
-                                    <p>Saved together. Decided together.</p>
+                                    <h2>Shared wishlist</h2>
+                                    <p>Games saved by this circle.</p>
                                 </div>
                                 <button
                                     className="text-button"
@@ -554,9 +551,9 @@ function CirclePage({
                         </>
                     ) : tab === "Discussions" ? (
                         <section className="circle-discussion">
-                            <h2>What should we play next?</h2>
+                            <h2>Discussions</h2>
                             <p className="social-muted">
-                                A small conversation, not a noisy channel.
+                                Talk about games and plans with this circle.
                             </p>
                             {messages.map((message, index) => (
                                 <div className="comment" key={`${message.person}-${index}`}>
@@ -614,8 +611,8 @@ function CirclePage({
                         <>
                             <div className="section-head">
                                 <div>
-                                    <div className="kicker">In our shared world</div>
-                                    <h2>A little circle activity</h2>
+                                    <div className="kicker">Recent</div>
+                                    <h2>Circle activity</h2>
                                 </div>
                             </div>
                             <div className="activity-feed">
@@ -648,12 +645,12 @@ function CirclePage({
                         ))}
                         {!circle.playing.length && (
                             <p className="social-muted">
-                                Find your first shared world with Group Finder.
+                                Use Group Finder to find a shared game.
                             </p>
                         )}
                     </div>
                     <div className="side-card">
-                        <h2>The friends in it</h2>
+                        <h2>Members</h2>
                         {circle.members.map((personId) => {
                             const person = personById(personId)
                             return (
@@ -665,7 +662,7 @@ function CirclePage({
                                     {renderAvatar({ id: personId, size: 30 })}
                                     <span>
                                         <strong>{person?.name || "A friend"}</strong>
-                                        <small>View gaming identity</small>
+                                        <small>View profile</small>
                                     </span>
                                     <Icon name="arrow" size={13} />
                                 </button>

@@ -3,12 +3,41 @@ import assert from 'node:assert/strict'
 import { buildComparisonSummary, buildFriendGameSignals, buildWishlistRecommendations, buildWishlistSummary, filterGames, gameCatalog, getGameById, getGameBySlug, getGamesByIds, resolveGameRecord, searchGames, sortGames, validateGameCatalog } from '../src/data/games.ts'
 import { applyInviteDecision, buildInviteSuggestions, getPendingInviteSummary } from '../src/socialState.ts'
 import { buildSocialGraph, initialCircles, socialPeople } from '../src/socialData.ts'
-import { COMMUNITY_NAVIGATION, MOBILE_NAVIGATION, PRIMARY_NAVIGATION } from '../src/components/navigation/MainNavigation.tsx'
+import React from 'react'
+import { renderToStaticMarkup } from 'react-dom/server'
+import { COMMUNITY_NAVIGATION, MainNavigation, MOBILE_NAVIGATION, PRIMARY_NAVIGATION, STORE_NAVIGATION } from '../src/components/navigation/MainNavigation.tsx'
 
-test('shared navigation keeps the prototype destinations and labels', () => {
-  assert.deepEqual(PRIMARY_NAVIGATION, ['Discover', 'Browse', 'Wishlist', 'The Web', 'Community', 'Compare'])
-  assert.deepEqual(MOBILE_NAVIGATION, ['Discover', 'Browse', 'The Web', 'Community', 'Gaming Circles', 'Wishlist', 'Profile', 'Personalization', 'Compare'])
-  assert.deepEqual(COMMUNITY_NAVIGATION, ['Community', 'Gaming Circles', 'Profile'])
+test('shared navigation uses umbrella destinations to keep the top bar small', () => {
+  assert.deepEqual(PRIMARY_NAVIGATION, ['Discover', 'Browse', 'Wishlist', 'Community'])
+  assert.deepEqual(MOBILE_NAVIGATION, ['Discover', 'Browse', 'Wishlist', 'Community'])
+  assert.deepEqual(COMMUNITY_NAVIGATION, ['Community', 'The Web', 'Gaming Circles'])
+  assert.deepEqual(STORE_NAVIGATION, ['Browse', 'Compare'])
+})
+
+test('Community and Store expose their child pages beneath the umbrella links', () => {
+  const props = {
+    atmosphere: 'Autumn',
+    wishlistCount: 0,
+    menuOpen: false,
+    query: '',
+    onNavigate() {},
+    onToggleMenu() {},
+    onQueryChange() {},
+    onSearchSubmit() {},
+  }
+  const communityHtml = renderToStaticMarkup(
+    React.createElement(MainNavigation, { ...props, currentView: 'The Web' }),
+  )
+  assert.match(communityHtml, /aria-label="Community pages"/)
+  assert.match(communityHtml, /aria-current="page">The Web/)
+  assert.match(communityHtml, />Gaming Circles</)
+
+  const storeHtml = renderToStaticMarkup(
+    React.createElement(MainNavigation, { ...props, currentView: 'Compare' }),
+  )
+  assert.match(storeHtml, /aria-label="Store pages"/)
+  assert.match(storeHtml, /aria-current="page">Compare/)
+  assert.match(storeHtml, />Store</)
 })
 
 test('current player profile uses the Sarah Chen identity while preserving the canonical ID', () => {

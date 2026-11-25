@@ -148,7 +148,6 @@ function normalizeCircle(
     return {
         id: raw.id,
         name: raw.name,
-        tag: typeof raw.tag === "string" ? raw.tag : "",
         desc: typeof raw.desc === "string" ? raw.desc : "",
         members,
         wishlist: uniqueGameIds(raw.wishlist, games),
@@ -903,7 +902,6 @@ export function useSocialState(
                 {
                     id,
                     name: trimmed,
-                    tag: "A shared world starts here.",
                     desc: "A new circle for your friends and your next discoveries.",
                     members: ["you"],
                     wishlist: [],

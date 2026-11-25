@@ -27,7 +27,6 @@ export type SocialPerson = {
 export type SocialCircle = {
   id: string
   name: string
-  tag: string
   desc: string
   members: string[]
   wishlist: number[]
@@ -317,7 +316,6 @@ export const initialCircles: SocialCircle[] = [
   {
     id: 'afterhours',
     name: 'The After Hours Club',
-    tag: 'Low pressure. Good company.',
     desc: 'A small circle for winding down, discovering something new, and finding our next co-op evening.',
     members: ['you', 'jamie', 'alex', 'morgan'],
     wishlist: [413150, 1172620],
@@ -328,7 +326,6 @@ export const initialCircles: SocialCircle[] = [
   {
     id: 'scenic',
     name: 'The Scenic Route',
-    tag: 'For the beautifully distracted.',
     desc: 'Unhurried exploration, tiny discoveries, and games where the journey is the whole point.',
     members: ['jamie', 'morgan'],
     wishlist: [1055540, 383870, 972660],
@@ -339,7 +336,6 @@ export const initialCircles: SocialCircle[] = [
   {
     id: 'story',
     name: 'One More Chapter',
-    tag: 'Stories worth talking about.',
     desc: 'A spoiler-conscious corner for memorable characters, meaningful choices, and shared recommendations.',
     members: ['morgan', 'alex'],
     wishlist: [383870, 972660],
@@ -350,7 +346,6 @@ export const initialCircles: SocialCircle[] = [
   {
     id: 'tactics',
     name: 'The Long Game',
-    tag: 'Patient plans. Hard lessons.',
     desc: 'A separate circle for strategy, systems, and games that respect your time by not holding your hand.',
     members: ['you', 'casey'],
     wishlist: [323190, 261550, 646570],

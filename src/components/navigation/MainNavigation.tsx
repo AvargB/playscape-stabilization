@@ -12,28 +12,29 @@ export const PRIMARY_NAVIGATION: NavigationDestination[] = [
     "Discover",
     "Browse",
     "Wishlist",
-    "The Web",
     "Community",
-    "Compare",
 ]
 
 export const MOBILE_NAVIGATION: NavigationDestination[] = [
     "Discover",
     "Browse",
-    "The Web",
-    "Community",
-    "Gaming Circles",
     "Wishlist",
-    "Profile",
-    "Personalization",
-    "Compare",
+    "Community",
 ]
 
 export const COMMUNITY_NAVIGATION: NavigationDestination[] = [
     "Community",
+    "The Web",
     "Gaming Circles",
-    "Profile",
 ]
+
+export const STORE_NAVIGATION: NavigationDestination[] = [
+    "Browse",
+    "Compare",
+]
+
+const COMMUNITY_VIEWS = ["Community", "The Web", "Gaming Circles"]
+const STORE_VIEWS = ["Browse", "Compare"]
 
 interface MainNavigationProps {
     currentView: string
@@ -64,8 +65,8 @@ export function MainNavigation({
 }: MainNavigationProps) {
     const isPrimaryCurrent = (destination: NavigationDestination) =>
         destination === currentView ||
-        (destination === "Community" &&
-            ["Gaming Circles", "Profile"].includes(currentView))
+        (destination === "Community" && COMMUNITY_VIEWS.includes(currentView)) ||
+        (destination === "Browse" && STORE_VIEWS.includes(currentView))
 
     return (
         <>
@@ -172,13 +173,24 @@ export function MainNavigation({
                     ))}
                 </nav>
             )}
-            {["Community", "Gaming Circles", "Profile"].includes(currentView) && (
-                <nav className="social-destinations" aria-label="Community destinations">
+            {COMMUNITY_VIEWS.includes(currentView) && (
+                <nav className="social-destinations" aria-label="Community pages">
                     {COMMUNITY_NAVIGATION.map((destination) => (
                         <NavigationItem
                             key={destination}
                             destination={destination}
-                            label={destination === "Profile" ? "Your profile" : undefined}
+                            active={currentView === destination}
+                            onNavigate={onNavigate}
+                        />
+                    ))}
+                </nav>
+            )}
+            {STORE_VIEWS.includes(currentView) && (
+                <nav className="social-destinations" aria-label="Store pages">
+                    {STORE_NAVIGATION.map((destination) => (
+                        <NavigationItem
+                            key={destination}
+                            destination={destination}
                             active={currentView === destination}
                             onNavigate={onNavigate}
                         />

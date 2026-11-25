@@ -250,3 +250,12 @@ test('receipt success badge sits inside the first receipt corner', () => {
     assert.match(source, /\.ps \.chk-receipt \{[^}]*position: relative/)
     assert.match(source, /\.ps \.chk-receipt \.chk-success-icon \{[^}]*left: 10px[^}]*top: 10px/)
 })
+
+test('phone receipts stack artwork above readable details', () => {
+    const source = readFileSync(new URL('features/checkout/checkout.css', srcRoot), 'utf8')
+    const phoneStyles = source.slice(source.lastIndexOf('@media (max-width: 760px)'))
+    assert.match(phoneStyles, /\.ps \.chk-receipt \{[^}]*grid-template-columns: minmax\(0, 1fr\)/)
+    assert.match(phoneStyles, /\.ps \.chk-receipt-facts > div \{[^}]*flex-wrap: wrap/)
+    assert.match(phoneStyles, /\.ps \.chk-footer \{[^}]*flex-direction: column/)
+    assert.match(phoneStyles, /overflow-wrap: anywhere/)
+})

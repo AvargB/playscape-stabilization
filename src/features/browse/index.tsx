@@ -148,6 +148,13 @@ export default function Browse({
                             <Icon name="arrow" size={15} />
                         </button>
                         <button
+                            className="text-button"
+                            onClick={() => changeView("Compare")}
+                        >
+                            Compare games
+                            <Icon name="sliders" size={15} />
+                        </button>
+                        <button
                             className="reset"
                             onClick={() => {
                                 setQuery("")
