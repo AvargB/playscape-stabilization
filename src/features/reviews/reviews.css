@@ -1,0 +1,373 @@
+/* Scoped styles for the review submission panel. */
+.ps .rvw-panel {
+    margin-top: 18px;
+    padding: 20px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.ps .rvw-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-bottom: 8px;
+}
+
+.ps .rvw-head h3 {
+    font: 500 21px/1.2 var(--heading);
+    margin-top: 4px;
+}
+
+.ps .rvw-field {
+    display: grid;
+    gap: 6px;
+    margin-top: 14px;
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: .02em;
+}
+
+.ps .rvw-field input,
+.ps .rvw-field textarea {
+    width: 100%;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--text);
+    padding: 9px 10px;
+    font-size: 13px;
+    font-weight: 400;
+    letter-spacing: 0;
+}
+
+.ps .rvw-field textarea {
+    resize: vertical;
+    min-height: 88px;
+}
+
+.ps .rvw-field input:focus-visible,
+.ps .rvw-field textarea:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+.ps .rvw-categories {
+    margin: 18px 0 0;
+    padding: 0;
+    border: 0;
+}
+
+.ps .rvw-categories legend {
+    padding: 0;
+    font-size: 11px;
+    font-weight: 600;
+}
+
+.ps .rvw-grid {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 10px;
+}
+
+.ps .rvw-grid .rvw-field {
+    margin-top: 10px;
+}
+
+.ps .rvw-errors,
+.ps .rvw-success {
+    margin: 16px 0 0;
+    font-size: 12px;
+}
+
+.ps .rvw-errors {
+    padding-left: 18px;
+    color: #ffb9a8;
+}
+
+.ps .rvw-success {
+    color: var(--accent);
+}
+
+.ps .rvw-actions {
+    margin-top: 18px;
+}
+
+.ps .rvw-community h3 {
+    font: 500 21px/1.2 var(--heading);
+    margin: 4px 0 14px;
+}
+
+.ps .rvw-overall {
+    display: flex;
+    align-items: baseline;
+    gap: 8px;
+}
+
+.ps .rvw-overall strong {
+    font: 600 34px/1 var(--heading);
+    color: var(--accent);
+}
+
+.ps .rvw-overall span,
+.ps .rvw-note {
+    font-size: 11px;
+}
+
+.ps .rvw-note {
+    margin: 10px 0 0;
+}
+
+.ps .rvw-category-list {
+    list-style: none;
+    margin: 16px 0 0;
+    padding: 0;
+    display: grid;
+    gap: 8px;
+}
+
+.ps .rvw-category-row {
+    display: grid;
+    grid-template-columns: minmax(92px, 1fr) 38px minmax(62px, 1fr);
+    align-items: center;
+    gap: 8px;
+    font-size: 11px;
+}
+
+.ps .rvw-category-name {
+    font-weight: 600;
+}
+
+.ps .rvw-category-score {
+    font-variant-numeric: tabular-nums;
+    text-align: right;
+    font-weight: 600;
+}
+
+.ps .rvw-category-count {
+    color: var(--muted);
+    text-align: right;
+}
+
+.ps .rvw-friends {
+    border-color: var(--accent);
+}
+
+.ps .rvw-friends h3 {
+    font: 500 21px/1.2 var(--heading);
+    margin: 4px 0 6px;
+}
+
+.ps .rvw-friend-list {
+    display: grid;
+    gap: 12px;
+    margin-top: 16px;
+}
+
+.ps .rvw-friend-card {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--bg);
+}
+
+.ps .rvw-friend-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.ps .rvw-friend-head > div {
+    display: grid;
+    gap: 2px;
+    min-width: 0;
+}
+
+.ps .rvw-relationship,
+.ps .rvw-source-note {
+    font-size: 10px;
+    color: var(--muted);
+}
+
+.ps .rvw-friend-score {
+    margin-left: auto;
+    display: grid;
+    justify-items: end;
+    font: 600 20px/1 var(--heading);
+    color: var(--accent);
+}
+
+.ps .rvw-friend-score small {
+    font: 400 9px/1.3 inherit;
+    letter-spacing: .04em;
+    text-transform: uppercase;
+}
+
+.ps .rvw-friend-text {
+    margin: 12px 0 10px;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.ps .rvw-friend-categories {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin: 0;
+    padding: 0;
+}
+
+.ps .rvw-friend-categories li {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 7px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 9px;
+}
+
+.ps .rvw-source-note {
+    margin: 10px 0 0;
+}
+
+.ps .rvw-insights h3 {
+    font: 500 21px/1.2 var(--heading);
+    margin: 4px 0 8px;
+}
+
+.ps .rvw-insight-list {
+    display: grid;
+    gap: 10px;
+    margin: 14px 0 0;
+}
+
+.ps .rvw-insight-list div {
+    display: grid;
+    gap: 3px;
+}
+
+.ps .rvw-insight-list dt {
+    font-size: 10px;
+    font-weight: 600;
+    letter-spacing: .03em;
+    text-transform: uppercase;
+    color: var(--muted);
+}
+
+.ps .rvw-insight-list dd {
+    margin: 0;
+    font-size: 12px;
+}
+
+.ps .rvw-discover-filter {
+    margin-top: 10px;
+    flex-wrap: wrap;
+}
+
+.ps .rvw-discover-filter button[aria-pressed="true"] {
+    border-color: var(--accent);
+    color: var(--accent);
+}
+
+.ps .card-review-context {
+    margin: 6px 0 0;
+    font-size: 10px;
+    color: var(--accent);
+}
+
+.ps .rvw-compare-note {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+}
+
+.ps .profile-review {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 10px;
+    background: var(--surface);
+}
+
+.ps .profile-review-head {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+.ps .profile-review p {
+    margin: 10px 0;
+    font-size: 12px;
+    line-height: 1.5;
+}
+
+.ps .rvw-panel button:focus-visible,
+.ps .rvw-discover-filter button:focus-visible,
+.ps .rvw-compare-note button:focus-visible,
+.ps .profile-review button:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
+}
+
+@media (max-width: 700px) {
+    .ps .rvw-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+
+    .ps .rvw-category-row {
+        grid-template-columns: minmax(72px, 1fr) 36px minmax(54px, auto);
+    }
+
+    .ps .rvw-discover-filter,
+    .ps .rvw-compare-note {
+        align-items: flex-start;
+    }
+}
+
+@media (max-width: 480px) {
+    .ps .rvw-panel {
+        padding: 16px;
+    }
+
+    .ps .rvw-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .ps .rvw-category-row {
+        grid-template-columns: 1fr auto;
+        gap: 3px 8px;
+    }
+
+    .ps .rvw-category-name {
+        grid-column: 1;
+        grid-row: 1;
+    }
+
+    .ps .rvw-category-score {
+        grid-column: 2;
+        grid-row: 1;
+    }
+
+    .ps .rvw-category-count {
+        grid-column: 2;
+        grid-row: 2;
+    }
+
+    .ps .rvw-friend-score {
+        margin-left: 8px;
+    }
+
+    .ps .rvw-friend-categories li {
+        font-size: 10px;
+    }
+
+    .ps .profile-review-head {
+        flex-direction: column;
+    }
+}

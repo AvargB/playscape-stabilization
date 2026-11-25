@@ -1,0 +1,644 @@
+/* Game Comparison Studio — scoped to the PLAYSCAPE shell. */
+.ps .sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    white-space: nowrap;
+    border: 0;
+}
+
+.ps .cmp-page {
+    --cmp-difference: #d56a67;
+    padding: 44px 0 24px;
+}
+
+.ps .cmp-intro .eyebrow {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    letter-spacing: 0.12em;
+    text-transform: uppercase;
+}
+
+.ps .cmp-intro h1 {
+    margin: 10px 0 8px;
+    font-family: var(--heading);
+    font-size: clamp(28px, 4vw, 42px);
+    line-height: 1.15;
+    letter-spacing: -0.02em;
+}
+
+.ps .cmp-intro > p {
+    max-width: 680px;
+    color: var(--muted);
+    font-size: 14px;
+}
+
+.ps .cmp-toolbar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+    align-items: center;
+    gap: 12px;
+    margin: 26px 0 10px;
+}
+
+.ps .cmp-count strong {
+    font-size: 18px;
+    color: var(--accent);
+}
+
+.ps .cmp-muted {
+    color: var(--muted);
+    font-size: 12px;
+}
+
+.ps .cmp-notice {
+    margin: 12px 0;
+    padding: 10px 14px;
+    border-left: 3px solid var(--accent);
+    border-radius: 4px;
+    background: color-mix(in srgb, var(--accent) 12%, var(--surface));
+    font-size: 13px;
+}
+
+.ps .cmp-selection {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    list-style: none;
+    margin: 12px 0 0;
+    padding: 0;
+}
+
+.ps .cmp-selection li {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 8px 6px 12px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    background: var(--surface);
+    font-size: 12px;
+}
+
+.ps .cmp-selection button,
+.ps .cmp-head-action,
+.ps .cmp-filter {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 6px 9px;
+    border: 1px solid var(--line);
+    border-radius: 6px;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+}
+
+.ps .cmp-selection button:hover,
+.ps .cmp-head-action:hover,
+.ps .cmp-filter:hover {
+    border-color: var(--accent);
+}
+
+.ps .cmp-panel {
+    margin-top: 22px;
+    padding: 24px;
+    border: 1px solid var(--line);
+    border-radius: var(--radius);
+    background: var(--surface);
+}
+
+.ps .cmp-panel-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 14px;
+    margin-bottom: 18px;
+}
+
+.ps .cmp-panel-head h2 {
+    font-size: 20px;
+    font-weight: 600;
+    letter-spacing: -0.01em;
+}
+
+.ps .cmp-panel-head .kicker {
+    color: var(--accent);
+    margin-bottom: 4px;
+}
+
+.ps .cmp-search {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 10px;
+    max-width: 520px;
+    padding: 9px 12px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+    color: var(--muted);
+}
+
+.ps .cmp-search input {
+    flex: 1;
+    min-width: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    outline: none;
+}
+
+.ps .cmp-results-count {
+    margin: 10px 0 12px;
+}
+
+.ps .cmp-results {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 10px;
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+.ps .cmp-result {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    min-width: 0;
+    padding: 8px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.ps .cmp-result > img {
+    width: 82px;
+    height: 46px;
+    object-fit: cover;
+    border-radius: 4px;
+    flex-shrink: 0;
+}
+
+.ps .cmp-result-body {
+    display: flex;
+    flex: 1;
+    flex-direction: column;
+    min-width: 0;
+    gap: 1px;
+    padding: 2px 4px;
+    border-radius: 8px;
+    transition: background .18s ease, box-shadow .18s ease;
+}
+
+.ps .cmp-result-body:hover,
+.ps .cmp-result-body:focus-visible {
+    background: color-mix(in srgb, var(--accent) 7%, transparent);
+    box-shadow: 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
+}
+
+.ps .cmp-result-body strong {
+    font-size: 13px;
+    overflow-wrap: anywhere;
+}
+
+.ps .cmp-result-body .cmp-muted {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.ps .cmp-result button {
+    flex-shrink: 0;
+    font-size: 12px;
+    min-height: 36px;
+    padding: 7px 12px;
+}
+
+.ps .cmp-result button:disabled {
+    opacity: 0.55;
+    cursor: not-allowed;
+}
+
+.ps .cmp-selected-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    color: var(--accent);
+    font-size: 11px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ps .cmp-empty {
+    text-align: center;
+}
+
+.ps .cmp-empty h2 {
+    margin: 10px 0 6px;
+    font-size: 20px;
+}
+
+.ps .cmp-empty p {
+    margin: 0 auto 16px;
+    color: var(--muted);
+    max-width: 440px;
+    font-size: 13px;
+}
+
+.ps .cmp-filters {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ps .cmp-filter[aria-pressed="true"] {
+    border-color: var(--accent);
+    background: color-mix(in srgb, var(--accent) 14%, transparent);
+    font-weight: 600;
+}
+
+.ps .cmp-scroll {
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+}
+
+.ps .cmp-scroll:focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.ps .cmp-table {
+    width: 100%;
+    min-width: max-content;
+    border-collapse: collapse;
+    font-size: 12px;
+}
+
+.ps .cmp-table th,
+.ps .cmp-table td {
+    padding: 11px 13px;
+    text-align: left;
+    vertical-align: top;
+    border-bottom: 1px solid var(--line);
+    line-height: 1.5;
+}
+
+.ps .cmp-table thead th {
+    background: var(--surface);
+    border-bottom: 2px solid var(--line);
+}
+
+.ps .cmp-table .cmp-label-col {
+    position: sticky;
+    left: 0;
+    z-index: 1;
+    min-width: 150px;
+    width: 150px;
+    background: var(--surface);
+    font-weight: 600;
+}
+
+.ps .cmp-table tbody tr:nth-child(even) td {
+    background: color-mix(in srgb, var(--surface) 70%, var(--bg));
+}
+
+.ps .cmp-table .cmp-game-col {
+    min-width: 208px;
+    max-width: 260px;
+    border-left: 1px solid var(--line);
+}
+
+.ps .cmp-game-head {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    margin-bottom: 10px;
+}
+
+.ps .cmp-game-head img {
+    width: 100%;
+    aspect-ratio: 1.92;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.ps .cmp-game-title {
+    padding: 0;
+    font-size: 14px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+
+.ps .cmp-game-head .cmp-meta {
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.ps .cmp-head-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.ps .cmp-head-action {
+    padding: 4px 7px;
+    font-size: 11px;
+}
+
+.ps .cmp-table td.cmp-lowest {
+    box-shadow: inset 3px 0 0 var(--accent);
+    font-weight: 600;
+}
+
+.ps .cmp-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 3px;
+    margin-left: 6px;
+    padding: 1px 6px;
+    border: 1px solid var(--line);
+    border-radius: 999px;
+    font-size: 10px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+.ps .cmp-tag-shared {
+    border-color: var(--line);
+    color: var(--muted);
+    background: color-mix(in srgb, var(--muted) 8%, transparent);
+}
+
+.ps .cmp-tag-different {
+    border-color: var(--cmp-difference);
+    color: #ffd8d6;
+    background: color-mix(in srgb, var(--cmp-difference) 28%, transparent);
+}
+
+.ps .cmp-tag-unavailable {
+    border-color: var(--line);
+    color: var(--muted);
+    background: var(--bg);
+}
+
+.ps .cmp-tag-price {
+    border-color: var(--line);
+    color: var(--text);
+}
+
+.ps .cmp-table tbody tr[data-status="different"] .cmp-label-col {
+    box-shadow: inset 3px 0 0 var(--cmp-difference);
+}
+
+.ps .cmp-table tbody tr[data-unavailable="true"] .cmp-label-col {
+    box-shadow: inset 3px 0 0 var(--line);
+}
+
+.ps .cmp-overlap {
+    display: block;
+    margin-top: 4px;
+    color: var(--muted);
+    font-size: 11px;
+}
+
+.ps .cmp-empty-row {
+    text-align: center;
+    color: var(--muted);
+}
+
+.ps .cmp-summary-intro {
+    margin-bottom: 16px;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+.ps .cmp-summary-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(235px, 1fr));
+    gap: 12px;
+}
+
+.ps .cmp-fact {
+    padding: 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: var(--bg);
+}
+
+.ps .cmp-fact h3,
+.ps .cmp-actions h3 {
+    margin-bottom: 8px;
+    font-size: 13px;
+    font-weight: 600;
+}
+
+.ps .cmp-fact p,
+.ps .cmp-fact li {
+    font-size: 12px;
+}
+
+.ps .cmp-fact ul {
+    margin: 0;
+    padding-left: 18px;
+}
+
+.ps .cmp-platform-filter {
+    display: flex;
+    flex-direction: column;
+    gap: 5px;
+    margin-top: 10px;
+    font-size: 11px;
+    color: var(--muted);
+}
+
+.ps .cmp-platform-filter select {
+    font-size: 12px;
+    height: 36px;
+}
+
+.ps .cmp-actions {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid var(--line);
+}
+
+.ps .cmp-actions ul {
+    display: grid;
+    gap: 8px;
+    list-style: none;
+    margin: 0 0 10px;
+    padding: 0;
+}
+
+.ps .cmp-actions li {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+}
+
+.ps .cmp-actions li strong {
+    margin-right: auto;
+}
+
+.ps .cmp-actions button,
+.ps .cmp-actions a {
+    font-size: 11px;
+    text-decoration: none;
+}
+
+.ps .cmp-page :focus-visible {
+    outline: 2px solid var(--accent);
+    outline-offset: 3px;
+}
+
+.game-info-popover {
+    --popover-accent: #d56a67;
+    --popover-line: #29374a;
+    --popover-surface: #121b29;
+    --popover-text: #edf1f7;
+    --popover-muted: #9aa8bb;
+    position: fixed;
+    z-index: 80;
+    width: min(300px, calc(100vw - 20px));
+    padding: 13px 14px;
+    border: 1px solid color-mix(in srgb, var(--popover-accent) 34%, var(--popover-line));
+    border-radius: 12px;
+    background: color-mix(in srgb, var(--popover-surface) 94%, #000);
+    box-shadow: 0 18px 44px #0008;
+    color: var(--popover-text);
+    pointer-events: none;
+}
+
+.game-info-popover-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    margin-bottom: 9px;
+}
+
+.game-info-popover-head img {
+    width: 72px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 6px;
+}
+
+.game-info-popover-head div {
+    min-width: 0;
+}
+
+.game-info-popover-head strong,
+.game-info-popover-head span {
+    display: block;
+}
+
+.game-info-popover-head span {
+    color: var(--popover-muted);
+    font-size: 11px;
+}
+
+.game-info-popover > p {
+    margin: 0 0 10px;
+    color: var(--popover-muted);
+    font-size: 11px;
+    line-height: 1.55;
+}
+
+.game-info-popover-meta {
+    display: grid;
+    gap: 5px;
+    margin: 0;
+    font-size: 11px;
+}
+
+.game-info-popover-meta div {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+}
+
+.game-info-popover-meta dt {
+    color: var(--popover-muted);
+}
+
+.game-info-popover-meta dd {
+    margin: 0;
+    text-align: right;
+    overflow-wrap: anywhere;
+}
+
+.ps .cmp-info-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    margin-top: 5px;
+    padding: 3px 7px;
+    border-color: var(--line);
+    border-radius: 7px;
+    color: var(--muted);
+    font-size: 10px;
+}
+
+.ps .cmp-info-button:hover,
+.ps .cmp-info-button:focus-visible,
+.ps .cmp-info-button[aria-expanded="true"] {
+    border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+    color: var(--accent);
+}
+
+@media (max-width: 1100px) {
+    .ps .cmp-results { grid-template-columns: 1fr; }
+    .ps .cmp-panel { padding: 18px; }
+    .ps .cmp-table .cmp-game-col { min-width: 190px; }
+}
+
+@media (max-width: 700px) {
+    .ps .cmp-page { padding: 28px 0 16px; }
+    .ps .cmp-panel { margin-top: 16px; padding: 15px; }
+    .ps .cmp-panel-head { display: block; }
+    .ps .cmp-filters { margin-top: 12px; }
+    .ps .cmp-toolbar { align-items: flex-start; flex-direction: column; }
+    .ps .cmp-result { flex-wrap: wrap; }
+    .ps .cmp-result-body { flex: 1 1 130px; }
+    .ps .cmp-result button { margin-left: auto; }
+    .ps .cmp-table .cmp-game-col { min-width: 172px; }
+    .ps .cmp-table .cmp-label-col { min-width: 122px; width: 122px; }
+    .ps .cmp-summary-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 480px) {
+    .ps .cmp-filters { display: grid; grid-template-columns: 1fr; }
+    .ps .cmp-result > img { width: 66px; height: 40px; }
+    .ps .cmp-table .cmp-game-col { min-width: 154px; }
+    .ps .cmp-table .cmp-label-col { min-width: 108px; width: 108px; }
+    .ps .cmp-table th, .ps .cmp-table td { padding: 9px; font-size: 11px; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .ps .cmp-page *,
+    .ps .cmp-page *::before,
+    .ps .cmp-page *::after {
+        scroll-behavior: auto !important;
+        transition: none !important;
+        animation: none !important;
+    }
+}
