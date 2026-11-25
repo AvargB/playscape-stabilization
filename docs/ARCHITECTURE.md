@@ -4,6 +4,8 @@
 
 `src/main.tsx` mounts `src/PLAYSCAPE-cleaner.tsx`. This is the active prototype implementation and remains the source of truth for application behavior during the initial refactor.
 
+For the visual sitemap, route map, overlay map, and state/data consumers, see `docs/INFORMATION_ARCHITECTURE.md`.
+
 ## Current modules
 
 - `src/data/games.ts` — canonical game records, catalog validation, lookup, search, filtering, sorting, wishlist summaries, and comparison helpers.

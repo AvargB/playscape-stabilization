@@ -65,6 +65,7 @@ npm test
 - `src/index.css` — global reset and page styles
 - `archive/legacy-implementations/` — retained historical versions; not imported by the active app
 - `docs/ARCHITECTURE.md` — current architecture and refactoring constraints
+- `docs/INFORMATION_ARCHITECTURE.md` — Mermaid visual of routes, navigation, overlays, and state domains
 - `docs/DEVELOPMENT.md` — local development and validation workflow
 - `index.html` — Vite page shell
 
