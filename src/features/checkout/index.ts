@@ -1,4 +1,6 @@
 export * from "./types"
+export * from "./edition"
+export * from "./ownership"
 export * from "./model"
 export * from "./storage"
 export * from "./useCheckout"

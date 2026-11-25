@@ -85,6 +85,7 @@ export type SocialContextValue = {
     useFinder: (prefs: Record<string, string>) => void
     state: SocialState
     update: (updater: (prev: SocialState) => SocialState) => void
+    reset: () => void
     dialog: { type: string; [key: string]: any } | null
     setDialog: (dialog: { type: string; [key: string]: any } | null) => void
     message: string
@@ -659,6 +660,20 @@ function writeVersioned(key: string, version: number, state: unknown) {
 /** Generic versioned writer shared by feature-owned records. */
 export const writeVersionedRecord = writeVersioned
 
+/**
+ * Removes one versioned record for explicit prototype resets only. Feature
+ * modules never touch raw browser storage; they call this shared owner.
+ */
+export function removeVersionedRecord(key: string): boolean {
+    try {
+        if (typeof window === "undefined") return false
+        window.localStorage.removeItem(key)
+        return true
+    } catch {
+        return false
+    }
+}
+
 /** Generic writer retained for older callers; new writes use the typed helpers. */
 export function saveState(key: string, value: unknown) {
     const record = isRecord(value) ? value : {}
@@ -806,6 +821,13 @@ export function useSocialState(
 
     function update(updater: (prev: SocialState) => SocialState) {
         setState((prev) => normalizeSocialState(updater(prev), games))
+    }
+
+    /** Explicit full-reset support; restores the seeded social prototype state. */
+    function reset() {
+        setState(normalizeSocialState(createEmptySocialState(), games))
+        setDialog(null)
+        setMessage("Prototype social data was reset to its seeded state.")
     }
 
     function react(id: string) {
@@ -1062,6 +1084,7 @@ export function useSocialState(
         useFinder,
         state,
         update,
+        reset,
         dialog,
         setDialog,
         message,

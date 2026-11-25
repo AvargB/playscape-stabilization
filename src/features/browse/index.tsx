@@ -15,6 +15,8 @@ export interface BrowseProps {
     changeView: (v: string, id?: string) => void
     setActive: (active: boolean) => void
     renderCard: (g: any) => React.ReactNode
+    /** Optional library filter; owned games remain in the catalog by default. */
+    ownedIds?: number[]
 }
 
 export default function Browse({
@@ -24,11 +26,14 @@ export default function Browse({
     changeView,
     setActive,
     renderCard,
+    ownedIds = [],
 }: BrowseProps) {
     const data = games?.length ? games : []
     const [browseGenre, setBrowseGenre] = React.useState("")
     const [browsePlatform, setBrowsePlatform] = React.useState("")
+    const [browseOwnership, setBrowseOwnership] = React.useState("")
     const [browseSort, setBrowseSort] = React.useState("featured")
+    const ownedSet = new Set(ownedIds)
 
     const browseGenres = Array.from(
         new Set(data.flatMap((game) => game.genres)),
@@ -40,6 +45,12 @@ export default function Browse({
                 platforms: browsePlatform ? [browsePlatform] : undefined,
             },
             searchGames(query, data),
+        ).filter((game) =>
+            browseOwnership === "owned"
+                ? ownedSet.has(game.id)
+                : browseOwnership === "unowned"
+                    ? !ownedSet.has(game.id)
+                    : true,
         ),
         browseSort as "featured" | "title" | "price-low" | "price-high",
     )
@@ -115,6 +126,20 @@ export default function Browse({
                         </select>
                     </label>
                     <label>
+                        Library
+                        <select
+                            value={browseOwnership}
+                            onChange={(event) =>
+                                setBrowseOwnership(event.target.value)
+                            }
+                            aria-label="Filter by ownership"
+                        >
+                            <option value="">All games</option>
+                            <option value="owned">Owned</option>
+                            <option value="unowned">Not owned</option>
+                        </select>
+                    </label>
+                    <label>
                         Sort by
                         <select
                             value={browseSort}
@@ -160,6 +185,7 @@ export default function Browse({
                                 setQuery("")
                                 setBrowseGenre("")
                                 setBrowsePlatform("")
+                                setBrowseOwnership("")
                                 setBrowseSort("featured")
                             }}
                         >
@@ -198,6 +224,7 @@ export default function Browse({
                                     setQuery("")
                                     setBrowseGenre("")
                                     setBrowsePlatform("")
+                                    setBrowseOwnership("")
                                 }}
                             >
                                 Show all games

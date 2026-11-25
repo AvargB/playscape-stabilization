@@ -47,7 +47,7 @@ function decodeHtml(value) {
 
 const caseyGames = [
     { id: 646570, title: 'Slay the Spire', kind: 'wishlist' },
-    { id: 219760, title: 'Pillars of Eternity II: Deadfire', kind: 'wishlist' },
+    { id: 219760, title: 'Beyond Divinity', kind: 'wishlist' },
     { id: 1086940, title: "Baldur's Gate 3", kind: 'wishlist' },
     { id: 323190, title: 'Frostpunk', kind: 'owned' },
     { id: 261550, title: 'Mount & Blade II: Bannerlord', kind: 'owned' },

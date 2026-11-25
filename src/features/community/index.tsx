@@ -70,6 +70,8 @@ export default function Community({
                     >
                         {[
                             "For you",
+                            "Acquired games",
+                            "Prototype gifts",
                             "Friends are playing",
                             "Recommendations",
                             "Reviews",

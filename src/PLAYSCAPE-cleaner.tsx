@@ -44,13 +44,15 @@ import { useReviews } from "./features/reviews"
 import {
     CheckoutDialog,
     createSessionId,
+    removeWishlistPurchases,
     useCheckout,
     type CheckoutSession,
     type GiftDecision,
     type PurchaseType,
     useCart,
 } from "./features/checkout"
-import { GameMediaPreview } from "./features/media"
+import { GameMediaPreview, getFeaturedPreview } from "./features/media"
+import type { PrototypeResetScope } from "./prototypeReset"
 
 const steam = (id: number) =>
     "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg"
@@ -795,6 +797,7 @@ export default function Playscape({
         [panel, setPanel] = React.useState(""),
         [detail, setDetail] = React.useState<number | null>(null),
         [saved, setSaved] = React.useState<number[]>(appHydration.saved),
+        savedRef = React.useRef(saved),
         [compareIds, setCompareIds] = React.useState<number[]>(
             comparisonHydration.selectedGameIds
         ),
@@ -804,8 +807,10 @@ export default function Playscape({
         [checkoutIds, setCheckoutIds] = React.useState<number[]>([]),
         [checkoutSessionId, setCheckoutSessionId] = React.useState<string | null>(null),
         [checkoutType, setCheckoutType] = React.useState<PurchaseType>("personal"),
-        [checkoutFromCart, setCheckoutFromCart] = React.useState(false)
+        [checkoutFromCart, setCheckoutFromCart] = React.useState(false),
+        [checkoutReturnId, setCheckoutReturnId] = React.useState<number | null>(null)
     const [view, setView] = React.useState(initialView)
+    savedRef.current = saved
     const [profileId, setProfileId] = React.useState(
         socialPeople.find((p) => p.name === initialPlayer)?.id || "you"
     ),
@@ -894,8 +899,16 @@ export default function Playscape({
         const n = saved.includes(id)
             ? saved.filter((x) => x !== id)
             : [...saved, id]
+        savedRef.current = n
         setSaved(n)
         persist(atmos, n, auto)
+    }
+    function removePurchasedFromWishlist(gameIds: number[]) {
+        const next = removeWishlistPurchases(savedRef.current, gameIds)
+        if (next.length === savedRef.current.length) return
+        savedRef.current = next
+        setSaved(next)
+        persist(atmos, next, auto)
     }
     const comparisonReady = React.useRef(false)
     React.useEffect(() => {
@@ -939,29 +952,51 @@ export default function Playscape({
             setNotice("That game is no longer available in this prototype catalog.")
             return
         }
+        if (type === "personal" && ownedSet.has(resolved.id)) {
+            setNotice("This game is already in your prototype library. View it there instead of purchasing it again.")
+            if (view !== "Profile") changeView("Profile", "you")
+            return
+        }
         setDetail(null)
         setCheckoutType(type)
         setCheckoutFromCart(false)
+        setCheckoutReturnId(resolved.id)
         setCheckoutSessionId(createSessionId())
         setCheckoutIds([resolved.id])
     }
     function openCartCheckout() {
-        if (!cart.gameIds.length) {
-            setNotice("Your prototype cart is empty. Add a game from its details or checkout screen.")
+        const validIds = cart.gameIds.filter((id) => !ownedSet.has(id))
+        if (!validIds.length) {
+            setNotice(
+                cart.gameIds.length
+                    ? "Every game in this prototype cart is already owned. View your library instead."
+                    : "Your prototype cart is empty. Add a game from its details or checkout screen.",
+            )
+            if (cart.gameIds.length) cart.removeOwned(cart.gameIds)
             return
+        }
+        if (validIds.length !== cart.gameIds.length) {
+            cart.removeOwned(cart.gameIds.filter((id) => ownedSet.has(id)))
+            setNotice("Owned games were removed from your prototype cart before checkout.")
         }
         setDetail(null)
         setCheckoutType("personal")
         setCheckoutFromCart(true)
+        setCheckoutReturnId(null)
         setCheckoutSessionId(createSessionId())
-        setCheckoutIds(cart.gameIds)
+        setCheckoutIds(validIds)
     }
     function closeCheckout() {
         setCheckoutIds([])
         setCheckoutSessionId(null)
         setCheckoutFromCart(false)
+        setCheckoutReturnId(null)
     }
     function addToCart(id: number) {
+        if (ownedSet.has(id)) {
+            setNotice("This game is already in your prototype library and cannot be added to the cart.")
+            return
+        }
         if (cart.gameIds.includes(id)) {
             setNotice("This game is already in your prototype cart.")
             return
@@ -981,10 +1016,22 @@ export default function Playscape({
         setNotice("Prototype cart cleared.")
     }
     function completeCheckout(session: CheckoutSession) {
+        if (
+            session.purchaseType === "personal" &&
+            (ownedSet.has(session.gameId) || ledgerOwnedIds.includes(session.gameId))
+        ) {
+            const message =
+                "This game is already in your prototype library. No duplicate purchase was recorded."
+            setNotice(message)
+            return { ok: false as const, errors: [message] }
+        }
         const result = checkoutState.completeCheckout(session)
         if (result.ok === false) {
             setNotice(result.errors[0] || "This simulated checkout could not be completed.")
             return result
+        }
+        if (session.purchaseType === "personal") {
+            removePurchasedFromWishlist([session.gameId])
         }
         if (checkoutFromCart) cart.clear()
         setNotice(
@@ -1034,6 +1081,72 @@ export default function Playscape({
     const reviewState = useReviews({ games: data, savedIds: saved })
     const checkoutState = useCheckout({ games: data })
     const cart = useCart({ games: data })
+    /* Central ownership selector: seeded profile + ledger, by canonical ID. */
+    const ownedIds = React.useMemo(
+        () => checkoutState.getOwnedGameIds(),
+        [checkoutState.state],
+    )
+    const ownedSet = React.useMemo(() => new Set(ownedIds), [ownedIds])
+    /* checkoutState.ownedGameIds remains the ledger-only compatibility view. */
+    const ledgerOwnedIds = checkoutState.ownedGameIds
+    const ownedIdsByPerson = React.useMemo(
+        () => checkoutState.getOwnedGameIdsByPerson(),
+        [checkoutState.state],
+    )
+    const prototypeActivity = React.useMemo(
+        () => checkoutState.getPrototypeActivity(),
+        [checkoutState.getPrototypeActivity],
+    )
+    const combinedActivity = React.useMemo(() => {
+        const events = [...prototypeActivity, ...social.activity]
+        return events.filter(
+            (item, index) => events.findIndex((entry) => entry.id === item.id) === index,
+        )
+    }, [prototypeActivity, social.activity])
+
+    React.useEffect(() => {
+        const stale = cart.items.filter((item) => ownedSet.has(item.gameId))
+        if (!stale.length) return
+        cart.removeOwned(stale.map((item) => item.gameId))
+        setNotice(
+            "Owned games were removed from your prototype cart. View them in your prototype library instead.",
+        )
+    }, [cart.items, ownedSet])
+
+    function resetPrototypeData(scope: PrototypeResetScope) {
+        checkoutState.resetPrototypeData(scope)
+        cart.clear()
+        closeCheckout()
+        if (scope === "all") {
+            social.reset()
+            social.setMessage("")
+            reviewState.reset()
+            const seededSaved = socialPeople.find((person) => person.id === "you")?.wishlist ?? []
+            savedRef.current = seededSaved
+            setSaved(seededSaved)
+            setCompareIds(clearComparison())
+            setAtmos("Autumn")
+            setAuto(false)
+            persist("Autumn", seededSaved, false)
+            setMood("Spring")
+            setPrefs({
+                Mood: "",
+                Playtime: "",
+                Players: "",
+                Budget: "",
+                Platform: "",
+                Difficulty: "",
+            })
+            setActive(false)
+            setQuery("")
+            setSocialDiscovery(false)
+        }
+        setNotice(
+            scope === "all"
+                ? "All prototype account data was reset to its seeded state. No real data was affected."
+                : "Prototype purchases, gift records, ownership, and history were reset.",
+        )
+    }
     function find() {
         changeView("Discover")
         setActive(true)
@@ -1054,7 +1167,9 @@ export default function Playscape({
         setMenu(false)
         setPanel(n)
     }
-    const card = (g: any) => (
+    const card = (g: any) => {
+        const hasVideoPreview = Boolean(getFeaturedPreview(g))
+        return (
         <article className="game" key={g.id}>
             <div className="game-art">
                 <button
@@ -1063,9 +1178,11 @@ export default function Playscape({
                     aria-label={"Explore " + g.title}
                 >
                     <img src={steam(g.id)} alt={g.title + " game artwork"} />
-                    <span className="explore">
-                        <Icon name="arrow" /> Explore game
-                    </span>
+                    {!hasVideoPreview && (
+                        <span className="explore">
+                            <Icon name="arrow" /> Explore game
+                        </span>
+                    )}
                 </button>
                 <GameMediaPreview game={g} />
                 <button
@@ -1102,6 +1219,11 @@ export default function Playscape({
                     <button onClick={() => openGame(g)}>{g.title}</button>
                     <span>${g.price.toFixed(2)}</span>
                 </div>
+                {ownedIds.includes(g.id) && (
+                    <span className="pill chk-owned-badge" data-owned-game={g.id}>
+                        In prototype library
+                    </span>
+                )}
                 <p>{g.genre}</p>
                 <div className="card-social-context">
                     {socialPeople
@@ -1153,17 +1275,32 @@ export default function Playscape({
                 </div>
                 <button
                     className="web-secondary card-checkout"
-                    onClick={() => openCheckout(g.id)}
-                    aria-label={"Start simulated checkout for " + g.title}
+                    onClick={() =>
+                        ownedSet.has(g.id)
+                            ? changeView("Profile", "you")
+                            : openCheckout(g.id)
+                    }
+                    aria-label={
+                        ownedSet.has(g.id)
+                            ? "View " + g.title + " in your prototype library"
+                            : "Start simulated checkout for " + g.title
+                    }
                 >
-                    Checkout
+                    {ownedSet.has(g.id) ? "In library" : "Checkout"}
                 </button>
             </div>
         </article>
-    )
+        )
+    }
     return (
         <CommunityContext.Provider
-            value={{ ...social, initialCircleTab, webFocus, activeView: view }}
+            value={{
+                ...social,
+                activity: combinedActivity,
+                initialCircleTab,
+                webFocus,
+                activeView: view,
+            }}
         >
             <div
                 className={
@@ -1277,7 +1414,7 @@ export default function Playscape({
 
  .ps .wishlist-social{margin-bottom:25px;border-bottom:1px solid var(--line);padding-bottom:20px}.ps .wishlist-social .row-actions{margin:0 0 15px}.ps .wishlist-social .primary{font-size:11px}.ps .wishlist-overlap{display:flex;flex-wrap:wrap;gap:14px;margin-top:15px}.ps .wishlist-overlap>button{display:flex;align-items:center;gap:8px;font-size:10px;padding:0}.ps button:disabled{cursor:not-allowed;opacity:.5}
 
- .ps .browse-fields{grid-template-columns:repeat(4,minmax(0,1fr))}.ps .browse-fields input{width:100%;min-width:0;padding:13px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text);font:12px Inter,sans-serif}.ps .browse-controls{margin-top:25px}.ps .browse-controls .finder-foot{justify-content:space-between;align-items:center}.ps .browse-controls .summary{font-size:10px;color:var(--muted)}@media(max-width:750px){.ps .browse-fields{grid-template-columns:repeat(2,minmax(0,1fr))}}@media(max-width:480px){.ps .browse-fields{grid-template-columns:1fr}}
+ .ps .browse-fields{grid-template-columns:repeat(5,minmax(0,1fr))}.ps .browse-fields input{width:100%;min-width:0;padding:13px 12px;border:1px solid var(--line);border-radius:5px;background:var(--bg);color:var(--text);font:12px Inter,sans-serif}.ps .browse-controls{margin-top:25px}.ps .browse-controls .finder-foot{justify-content:space-between;align-items:center}.ps .browse-controls .summary{font-size:10px;color:var(--muted)}@media(max-width:750px){.ps .browse-fields{grid-template-columns:repeat(3,minmax(0,1fr))}}@media(max-width:480px){.ps .browse-fields{grid-template-columns:1fr}}
  .ps .web-network{height:760px}.ps .graph-stage{height:600px;flex-shrink:0}.ps .web-inspector{max-height:760px;overflow-y:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
  @media(max-width:750px){.ps .web-network{height:660px}.ps .graph-stage{height:550px}.ps .web-inspector{max-height:none;overflow:visible}}
 
@@ -2283,6 +2420,7 @@ export default function Playscape({
                             compareIds={compareIds}
                             toggleCompare={toggleCompare}
                             reviews={reviewState.reviews}
+                            ownedIds={ownedIds}
                         />
                         {view === "Discover" && <CommunityPreview />}
                     </PageContainer>
@@ -2294,6 +2432,7 @@ export default function Playscape({
                             changeView={changeView}
                             setActive={setActive}
                             renderCard={card}
+                            ownedIds={ownedIds}
                         />
                     )}
                     {view === "Wishlist" && (
@@ -2311,6 +2450,7 @@ export default function Playscape({
                             }}
                             wishlistSummary={wishlistSummary}
                             renderCard={card}
+                            ownedIds={ownedIds}
                         />
                     )}
                     {view === "Compare" && (
@@ -2326,6 +2466,7 @@ export default function Playscape({
                             onBrowse={() => changeView("Browse")}
                             reviews={reviewState.reviews}
                             onCheckout={openCheckout}
+                            ownedIds={ownedIds}
                         />
                     )}
                     {view === "The Web" && (
@@ -2341,6 +2482,8 @@ export default function Playscape({
                                 setDialog: social.setDialog,
                                 graph: social.graph,
                                 state: social.state,
+                                ownedIdsByPerson,
+                                prototypeActivity,
                             }}
                         />
                     )}
@@ -2363,7 +2506,7 @@ export default function Playscape({
                         <Profiles
                             id={profileId}
                             social={{
-                                activity: social.activity,
+                                activity: combinedActivity,
                                 state: social.state,
                                 saved: social.saved,
                                 go: social.go,
@@ -2384,6 +2527,8 @@ export default function Playscape({
                                 state: checkoutState.state,
                                 onRespondToGift: respondToGift,
                             }}
+                            ownedIds={ownedIds}
+                            onResetPrototypeData={resetPrototypeData}
                         />
                     )}
                     {view === "Gaming Circles" && (
@@ -2542,7 +2687,12 @@ export default function Playscape({
                     setDetail={setDetail}
                     reviews={reviewState.reviews}
                     onSubmitReview={reviewState.submitReview}
+                    ownedIds={ownedIds}
                     onCheckout={openCheckout}
+                    onViewLibrary={() => {
+                        setDetail(null)
+                        changeView("Profile", "you")
+                    }}
                 />
                 <SocialDialog
                     key={
@@ -2555,6 +2705,8 @@ export default function Playscape({
                         games={checkoutIds
                             .map((id) => resolveGameRecord(id, data))
                             .filter((entry): entry is GameRecord => Boolean(entry))}
+                        ownedIds={ownedIds}
+                        items={checkoutFromCart ? cart.items : undefined}
                         sessionId={checkoutSessionId}
                         initialPurchaseType={checkoutType}
                         friends={socialPeople}
@@ -2566,6 +2718,16 @@ export default function Playscape({
                         onAddToCart={addToCart}
                         onRemoveFromCart={removeFromCart}
                         onClearCart={clearCartItems}
+                        onBackToProduct={() => {
+                            const gameId = checkoutReturnId
+                            closeCheckout()
+                            if (gameId) openGame(gameId)
+                        }}
+                        onReturnToStore={() => {
+                            closeCheckout()
+                            changeView("Browse")
+                        }}
+                        onViewLibrary={() => changeView("Profile", "you")}
                         onClose={closeCheckout}
                         onComplete={completeCheckout}
                         onViewProfile={(id) => {

@@ -30,6 +30,8 @@ export interface WishlistProps {
         }>
     }
     renderCard: (g: GameRecord) => React.ReactNode
+    /** Owned games remain wishlistable, but are not pitched as new saves. */
+    ownedIds?: number[]
 }
 
 export default function Wishlist({
@@ -41,16 +43,20 @@ export default function Wishlist({
     social,
     wishlistSummary,
     renderCard,
+    ownedIds = [],
 }: WishlistProps) {
     const { saved: socialSaved, games: socialGames, setDialog, go } = social
+    const ownedSet = React.useMemo(() => new Set(ownedIds), [ownedIds])
     const highlighted = React.useMemo(
         () =>
             buildWishlistRecommendations(
                 socialSaved,
                 socialPeople,
                 socialGames,
-            ).slice(0, 3),
-        [socialSaved, socialGames],
+            )
+                .filter((entry) => !ownedSet.has(entry.game.id))
+                .slice(0, 3),
+        [socialSaved, socialGames, ownedSet],
     )
 
     function WishlistSocial() {

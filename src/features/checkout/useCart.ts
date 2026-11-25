@@ -1,11 +1,17 @@
 import * as React from "react"
 import { gameCatalog, type GameRecord } from "../../data/games"
+import { getGameEdition } from "./edition"
 import {
+    addCartItem,
     addGameToCart,
     clearCart,
+    clearCartItems,
     loadCartState,
+    removeCartItem,
     removeGameFromCart,
+    removeOwnedCartItems,
     saveCartState,
+    type CartItem,
     type CartState,
 } from "./cart"
 
@@ -15,12 +21,16 @@ export type UseCartOptions = {
 
 export type CartApi = {
     gameIds: number[]
+    items: CartItem[]
     add: (id: number) => void
+    addEdition: (id: number, edition?: string) => void
     remove: (id: number) => void
+    removeEdition: (id: number, edition?: string) => void
+    removeOwned: (gameIds: ReadonlyArray<number>) => void
     clear: () => void
 }
 
-/** Local prototype cart; game identity is always validated from the catalog. */
+/** Local prototype cart; game identity and edition are validated from the catalog. */
 export function useCart({ games = gameCatalog }: UseCartOptions = {}): CartApi {
     const hydrationRef = React.useRef<ReturnType<typeof loadCartState> | null>(null)
     if (!hydrationRef.current) hydrationRef.current = loadCartState({ games })
@@ -38,25 +48,83 @@ export function useCart({ games = gameCatalog }: UseCartOptions = {}): CartApi {
 
     const add = React.useCallback((id: number) => {
         if (!optionsRef.current.games.some((game) => game.id === id)) return
-        const next = addGameToCart(stateRef.current.gameIds, id)
-        if (next === stateRef.current.gameIds) return
-        stateRef.current = { gameIds: next }
-        setState(stateRef.current)
+        const nextItems = addCartItem(stateRef.current.items, id, getGameEdition(
+            optionsRef.current.games.find((game) => game.id === id),
+        ))
+        if (nextItems === stateRef.current.items) return
+        const next: CartState = {
+            items: nextItems,
+            gameIds: addGameToCart(stateRef.current.gameIds, id),
+        }
+        stateRef.current = next
+        setState(next)
+    }, [])
+
+    const addEdition = React.useCallback((id: number, edition?: string) => {
+        const game = optionsRef.current.games.find((entry) => entry.id === id)
+        if (!game) return
+        const nextItems = addCartItem(stateRef.current.items, id, edition ?? getGameEdition(game))
+        if (nextItems === stateRef.current.items) return
+        const next: CartState = {
+            items: nextItems,
+            gameIds: addGameToCart(stateRef.current.gameIds, id),
+        }
+        stateRef.current = next
+        setState(next)
     }, [])
 
     const remove = React.useCallback((id: number) => {
-        const next = removeGameFromCart(stateRef.current.gameIds, id)
-        if (next === stateRef.current.gameIds) return
-        stateRef.current = { gameIds: next }
-        setState(stateRef.current)
+        // The cart control is per game, so it removes every edition of that game.
+        const nextItems = stateRef.current.items.filter((item) => item.gameId !== id)
+        if (nextItems.length === stateRef.current.items.length) return
+        const next: CartState = {
+            items: nextItems,
+            gameIds: removeGameFromCart(stateRef.current.gameIds, id),
+        }
+        stateRef.current = next
+        setState(next)
+    }, [])
+
+    const removeEdition = React.useCallback((id: number, edition?: string) => {
+        const nextItems = removeCartItem(stateRef.current.items, id, edition)
+        if (nextItems === stateRef.current.items) return
+        const next: CartState = {
+            items: nextItems,
+            gameIds: nextItems.map((item) => item.gameId),
+        }
+        stateRef.current = next
+        setState(next)
+    }, [])
+
+    const removeOwned = React.useCallback((gameIds: ReadonlyArray<number>) => {
+        const nextItems = removeOwnedCartItems(stateRef.current.items, gameIds)
+        if (nextItems.length === stateRef.current.items.length) return
+        const next: CartState = {
+            items: nextItems,
+            gameIds: [...new Set(nextItems.map((item) => item.gameId))],
+        }
+        stateRef.current = next
+        setState(next)
     }, [])
 
     const clear = React.useCallback(() => {
-        const next = clearCart()
-        if (next === stateRef.current.gameIds) return
-        stateRef.current = { gameIds: next }
-        setState(stateRef.current)
+        const next: CartState = { gameIds: clearCart(), items: clearCartItems() }
+        if (
+            next.items.length === stateRef.current.items.length &&
+            next.gameIds.length === stateRef.current.gameIds.length
+        ) return
+        stateRef.current = next
+        setState(next)
     }, [])
 
-    return { gameIds: state.gameIds, add, remove, clear }
+    return {
+        gameIds: state.gameIds,
+        items: state.items,
+        add,
+        addEdition,
+        remove,
+        removeEdition,
+        removeOwned,
+        clear,
+    }
 }

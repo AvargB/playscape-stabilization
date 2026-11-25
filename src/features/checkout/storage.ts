@@ -1,6 +1,7 @@
 import { gameCatalog, type GameRecord } from "../../data/games"
-import { readVersionedRecord, writeVersionedRecord } from "../../social"
+import { readVersionedRecord, removeVersionedRecord, writeVersionedRecord } from "../../social"
 import { socialPeople, type SocialPerson } from "../../socialData"
+import { getGameEdition } from "./edition"
 import {
     CHECKOUT_KEYS,
     PAYMENT_METHODS,
@@ -65,6 +66,11 @@ const normalizeTransaction = (
             ? entry.sessionId
             : id
     const gameId = Number.isInteger(entry.gameId) ? entry.gameId : null
+    const game = games.find((record) => record.id === gameId)
+    const edition =
+        typeof entry.edition === "string" && entry.edition.trim()
+            ? entry.edition.trim()
+            : getGameEdition(game)
     const type = entry.type as PurchaseType
     const paymentMethod = entry.paymentMethod
     const createdAt = typeof entry.createdAt === "string" ? entry.createdAt : null
@@ -95,6 +101,8 @@ const normalizeTransaction = (
             id,
             sessionId,
             gameId,
+            title: game!.title,
+            edition,
             senderId: "you",
             recipientId: null,
             type,
@@ -127,6 +135,8 @@ const normalizeTransaction = (
         id,
         sessionId,
         gameId,
+        title: game!.title,
+        edition,
         senderId: "you",
         recipientId: entry.recipientId,
         type,
@@ -215,3 +225,6 @@ export const saveCheckoutState = (
         normalized.state,
     )
 }
+
+/** Used only by an explicit prototype reset; never called during hydration. */
+export const clearCheckoutState = (): boolean => removeVersionedRecord(CHECKOUT_STORAGE_KEY)

@@ -19,6 +19,7 @@ export interface ComparisonTableProps extends GameInfoHandlers {
     onRemove: (id: number) => void
     onToggleSaved: (id: number) => void
     onOpenGame: (game: GameRecord | number) => void
+    ownedIds?: number[]
 }
 
 const FILTERS: Array<{ id: ComparisonFilter; label: string }> = [
@@ -39,11 +40,13 @@ export default function ComparisonTable({
     onRemove,
     onToggleSaved,
     onOpenGame,
+    ownedIds = [],
     onGameHover,
     onGameLeave,
     onGameInfoToggle,
     infoGameId,
 }: ComparisonTableProps) {
+    const ownedSet = new Set(ownedIds)
     return (
         <section className="cmp-panel cmp-table-panel" aria-labelledby="cmp-table-heading">
             <div className="cmp-panel-head">
@@ -124,6 +127,11 @@ export default function ComparisonTable({
                                                 {game.title}
                                             </button>
                                             <span className="cmp-meta">{game.genre}</span>
+                                            {ownedSet.has(game.id) && (
+                                                <span className="pill chk-owned-badge" data-owned-game={game.id}>
+                                                    In prototype library
+                                                </span>
+                                            )}
                                         </div>
                                         <div className="cmp-head-actions">
                                             <button

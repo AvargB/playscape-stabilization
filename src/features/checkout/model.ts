@@ -1,5 +1,6 @@
 import { gameCatalog, type GameRecord } from "../../data/games"
 import { directFriendIds, socialPeople, type SocialPerson } from "../../socialData"
+import { getGameEdition } from "./edition"
 import {
     GIFT_STATUS_LABELS,
     PAYMENT_METHODS,
@@ -18,6 +19,8 @@ import {
 export type CheckoutValidationOptions = {
     games?: GameRecord[]
     people?: SocialPerson[]
+    /** Current ledger, supplied by the hook to prevent duplicate personal purchases. */
+    state?: CheckoutState
 }
 
 export type CreateTransactionOptions = CheckoutValidationOptions & {
@@ -67,6 +70,7 @@ export function buildCheckoutSummary(game: GameRecord): CheckoutSummary {
     const price = getPrototypePrice(game)
     return {
         gameId: game.id,
+        edition: getGameEdition(game),
         title: game.title,
         developer: game.developer ?? null,
         publisher: game.publisher ?? null,
@@ -75,6 +79,81 @@ export function buildCheckoutSummary(game: GameRecord): CheckoutSummary {
         subtotal: price,
         total: price,
     }
+}
+
+export type CartTotalsLine = {
+    gameId: number
+    edition?: string
+}
+
+export type CartTotals = {
+    subtotal: number | null
+    total: number | null
+    itemCount: number
+}
+
+/** Prototype-only totals; a missing/invalid catalog price is never invented. */
+export function calculateCartTotals(
+    lines: ReadonlyArray<CartTotalsLine>,
+    games: GameRecord[] = gameCatalog,
+): CartTotals {
+    let subtotal = 0
+    for (const line of lines) {
+        const game = games.find((entry) => entry.id === line.gameId)
+        const price = game ? getPrototypePrice(game) : null
+        if (price === null) return { subtotal: null, total: null, itemCount: lines.length }
+        subtotal += price
+    }
+    return { subtotal, total: subtotal, itemCount: lines.length }
+}
+
+/**
+ * Every edition the person already owns by canonical game ID. Seeded profile
+ * games, personal purchases, and accepted gifts all count; sent gifts do not.
+ */
+export function getPrototypeOwnedEditions(
+    state: CheckoutState,
+    personId = "you",
+    options: Pick<CheckoutValidationOptions, "games" | "people"> = {},
+): Array<{ gameId: number; edition: string }> {
+    const games = options.games ?? gameCatalog
+    const people = options.people ?? socialPeople
+    const entries = new Map<string, { gameId: number; edition: string }>()
+    const editionFor = (gameId: number, edition?: string | null) =>
+        edition?.trim() || getGameEdition(games.find((game) => game.id === gameId) ?? null)
+    const add = (gameId: number, edition?: string | null) => {
+        const record = { gameId, edition: editionFor(gameId, edition) }
+        entries.set(`${gameId}::${record.edition}`, record)
+    }
+
+    for (const gameId of people.find((person) => person.id === personId)?.owned ?? []) {
+        add(gameId)
+    }
+    for (const transaction of state.transactions) {
+        if (
+            transaction.type === "personal" &&
+            transaction.senderId === personId
+        ) {
+            add(transaction.gameId, transaction.edition)
+        }
+        if (
+            transaction.type === "gift" &&
+            transaction.recipientId === personId &&
+            transaction.giftStatus === "accepted"
+        ) {
+            add(transaction.gameId, transaction.edition)
+        }
+    }
+    return [...entries.values()]
+}
+
+/** Own wishlist entries are removed only for completed personal purchases. */
+export function removeWishlistPurchases(
+    saved: ReadonlyArray<number>,
+    purchasedGameIds: ReadonlyArray<number>,
+): number[] {
+    const purchased = new Set(purchasedGameIds)
+    return saved.filter((id) => !purchased.has(id))
 }
 
 export function validateCheckoutSession(
@@ -99,6 +178,17 @@ export function validateCheckoutSession(
     if (!PAYMENT_METHOD_IDS.includes(session?.paymentMethod)) {
         errors.push("Choose an illustrative payment method.")
     }
+    if (options.state && session?.purchaseType === "personal") {
+        const game = games.find((entry) => entry.id === session.gameId)
+        const edition = session.edition?.trim() || getGameEdition(game)
+        const alreadyOwned = getPrototypeOwnedEditions(options.state, "you", {
+            games,
+            people,
+        }).some(
+            (entry) => entry.gameId === session.gameId && entry.edition === edition,
+        )
+        if (alreadyOwned) errors.push("This edition is already in your prototype library.")
+    }
     if (typeof session?.giftMessage !== "string" || session.giftMessage.length > 500) {
         errors.push("Gift messages must be 500 characters or fewer.")
     }
@@ -118,7 +208,7 @@ export function createPrototypeTransaction(
 ): CheckoutResult {
     const games = options.games ?? gameCatalog
     const people = options.people ?? socialPeople
-    const errors = validateCheckoutSession(session, { games, people })
+    const errors = validateCheckoutSession(session, { games, people, state: options.state })
     if (errors.length) return { ok: false, errors }
 
     const game = games.find((entry) => entry.id === session.gameId)!
@@ -127,6 +217,8 @@ export function createPrototypeTransaction(
         id: options.id ?? `txn-${session.id}`,
         sessionId: session.id,
         gameId: game.id,
+        title: game.title,
+        edition: session.edition?.trim() || getGameEdition(game),
         senderId: "you",
         recipientId: gift ? (session.recipientId as string) : null,
         type: session.purchaseType,

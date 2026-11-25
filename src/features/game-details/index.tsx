@@ -40,7 +40,11 @@ export interface GameDetailsProps {
     setDetail: (detail: number | null) => void
     reviews: ReviewRecord[]
     onSubmitReview: (draft: ReviewDraft, revisionOf?: string) => ReviewRecordResult
+    /** Canonical static ownership plus the local prototype purchase overlay. */
+    ownedIds?: number[]
     onCheckout?: (id: number, type: PurchaseType) => void
+    /** Routes an owned game directly to the prototype library. */
+    onViewLibrary?: (gameId: number) => void
 }
 
 export default function GameDetails({
@@ -57,11 +61,14 @@ export default function GameDetails({
     setDetail,
     reviews,
     onSubmitReview,
+    ownedIds = [],
     onCheckout,
+    onViewLibrary,
 }: GameDetailsProps) {
     const data = games?.length ? games : []
     const detailGame =
         detail === null ? null : resolveGameRecord(detail, data) ?? null
+    const isOwned = detailGame ? ownedIds.includes(detailGame.id) : false
     const existingReview = detailGame
         ? findReviewForPersonGame(reviews, detailGame.id, "you")
         : undefined
@@ -254,6 +261,11 @@ export default function GameDetails({
                         <span className="pill">
                             {detailGame.difficulty}
                         </span>
+                        {isOwned && (
+                            <span className="pill chk-owned-badge" data-owned-game={detailGame.id}>
+                                In prototype library
+                            </span>
+                        )}
                     </div>
                     {(detailGame.developer ||
                         detailGame.publisher ||
@@ -294,6 +306,11 @@ export default function GameDetails({
                         <br />
                         Sample base-game price: ${detailGame.price.toFixed(2)} USD. Checkout is simulated; no purchase is made in this prototype.
                     </div>
+                    {isOwned && (
+                        <p className="chk-owned-note" role="status">
+                            This game is already in your prototype library. Duplicate personal purchases are not available.
+                        </p>
+                    )}
                     <div className="detail-actions">
                         <button
                             className="primary"
@@ -325,21 +342,34 @@ export default function GameDetails({
                                 ? "Remove from compare"
                                 : "Compare this game"}
                         </button>
-                        {onCheckout && (
-                            <>
+                        {isOwned ? (
+                            <button
+                                className="web-secondary chk-detail-action"
+                                onClick={() =>
+                                    onViewLibrary
+                                        ? onViewLibrary(detailGame.id)
+                                        : go("Profile", "you")
+                                }
+                            >
+                                View in library
+                            </button>
+                        ) : (
+                            onCheckout && (
                                 <button
                                     className="web-secondary chk-detail-action"
                                     onClick={() => onCheckout(detailGame.id, "personal")}
                                 >
                                     Purchase in prototype
                                 </button>
-                                <button
-                                    className="web-secondary chk-detail-action"
-                                    onClick={() => onCheckout(detailGame.id, "gift")}
-                                >
-                                    Gift to a friend
-                                </button>
-                            </>
+                            )
+                        )}
+                        {onCheckout && (
+                            <button
+                                className="web-secondary chk-detail-action"
+                                onClick={() => onCheckout(detailGame.id, "gift")}
+                            >
+                                Gift to a friend
+                            </button>
                         )}
                         <a
                             href={

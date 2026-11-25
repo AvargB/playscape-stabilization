@@ -18,7 +18,7 @@ import {
     type ReviewDiscoveryFilter,
     type ReviewRecord,
 } from "../reviews"
-import { GameMediaPreview } from "../media"
+import { GameMediaPreview, getFeaturedPreview } from "../media"
 
 export type Season = {
     name: string
@@ -57,6 +57,8 @@ export interface DiscoverProps {
     compareIds?: number[]
     toggleCompare?: (id: number) => void
     reviews: ReviewRecord[]
+    /** Canonical IDs owned by the current prototype user. */
+    ownedIds?: number[]
 }
 
 const seasonalHighlights: Record<string, string> = {
@@ -91,8 +93,13 @@ function Discover({
     compareIds = [],
     toggleCompare,
     reviews,
+    ownedIds = [],
 }: DiscoverProps) {
     const [reviewFilter, setReviewFilter] = React.useState<ReviewDiscoveryFilter>("all")
+    const [ownershipFilter, setOwnershipFilter] = React.useState<
+        "all" | "owned" | "unowned"
+    >("all")
+    const ownedSet = React.useMemo(() => new Set(ownedIds), [ownedIds])
     const data = games?.length ? games : []
     const selected = seasons.find((s) => s.name === mood)
     const budgetLimit = prefs.Budget && prefs.Budget !== "Any budget"
@@ -155,7 +162,7 @@ function Discover({
     matches = matches.sort((a, b) => {
         const score = (g: any) =>
             (g.season === mood ? 1 : 0) +
-            (socialDiscovery
+            (socialDiscovery && !ownedSet.has(g.id)
                 ? socialPeople.filter(
                     (p) => p.id !== "you" && p.recommends.includes(g.id),
                 ).length * 2
@@ -163,9 +170,16 @@ function Discover({
         return score(b) - score(a)
     })
     const reviewMatches = filterGamesByReviews(matches, reviews, reviewFilter)
-    const shown = active || query || reviewFilter !== "all"
-        ? reviewMatches
-        : reviewMatches.slice(0, 4)
+    const ownershipMatches = reviewMatches.filter((game) =>
+        ownershipFilter === "all"
+            ? true
+            : ownershipFilter === "owned"
+                ? ownedSet.has(game.id)
+                : !ownedSet.has(game.id),
+    )
+    const shown = active || query || reviewFilter !== "all" || ownershipFilter !== "all"
+        ? ownershipMatches
+        : ownershipMatches.slice(0, 4)
 
     const randomizePreferences = () => {
         const budgets = ["Under $10", "Under $25", "Under $50", "Any budget"]
@@ -271,6 +285,7 @@ function Discover({
     const card = (g: any) => {
         const friendReviewCount = getFriendGameReviews(reviews, g.id).length
         const gameBreakdown = buildReviewBreakdown(getGameReviews(reviews, g.id), g.id)
+        const hasVideoPreview = Boolean(getFeaturedPreview(g))
         return (
         <article className="game" key={g.id}>
             <div className="game-art">
@@ -280,9 +295,11 @@ function Discover({
                     aria-label={"Explore " + g.title}
                 >
                     <img src={steam(g.id)} alt={g.title + " game artwork"} />
-                    <span className="explore">
-                        <Icon name="arrow" /> Explore game
-                    </span>
+                    {!hasVideoPreview && (
+                        <span className="explore">
+                            <Icon name="arrow" /> Explore game
+                        </span>
+                    )}
                 </button>
                 <GameMediaPreview game={g} />
                 <button
@@ -322,28 +339,35 @@ function Discover({
             <div className="game-info">
                 <div className="game-title">
                     <button onClick={() => openGame(g)}>{g.title}</button>
+                    {ownedSet.has(g.id) && (
+                        <span className="pill chk-owned-badge" data-owned-game={g.id}>
+                            In prototype library
+                        </span>
+                    )}
                     <span>${g.price.toFixed(2)}</span>
                 </div>
                 <p>{g.genre}</p>
                 <div className="card-social-context">
-                    {socialPeople
-                        .filter(
-                            (p) => p.id !== "you" && p.recommends.includes(g.id),
-                        )
-                        .map((p) => p.name.split(" ")[0])
-                        .join(" & ")
-                        ? "Recommended by " +
-                        socialPeople
+                    {ownedSet.has(g.id)
+                        ? "In your prototype library"
+                        : socialPeople
                             .filter(
-                                (p) =>
-                                    p.id !== "you" &&
-                                    p.recommends.includes(g.id),
+                                (p) => p.id !== "you" && p.recommends.includes(g.id),
                             )
                             .map((p) => p.name.split(" ")[0])
                             .join(" & ")
-                        : socialPeople.filter(
-                            (p) => p.id !== "you" && p.owned.includes(g.id),
-                        ).length + " friends own this"}
+                            ? "Recommended by " +
+                            socialPeople
+                                .filter(
+                                    (p) =>
+                                        p.id !== "you" &&
+                                        p.recommends.includes(g.id),
+                                )
+                                .map((p) => p.name.split(" ")[0])
+                                .join(" & ")
+                            : socialPeople.filter(
+                                (p) => p.id !== "you" && p.owned.includes(g.id),
+                            ).length + " friends own this"}
                 </div>
                 {(friendReviewCount > 0 || gameBreakdown.reviewCount > 0) && (
                     <div className="card-review-context">
@@ -496,6 +520,27 @@ function Discover({
                         </button>
                     ))}
                 </div>
+                <div
+                    className="finder-social rvw-discover-filter"
+                    role="group"
+                    aria-label="Ownership filter"
+                >
+                    <span>Library</span>
+                    {([
+                        ["all", "All games"],
+                        ["owned", "Owned"],
+                        ["unowned", "Not owned"],
+                    ] as const).map(([id, label]) => (
+                        <button
+                            type="button"
+                            key={id}
+                            aria-pressed={ownershipFilter === id}
+                            onClick={() => setOwnershipFilter(id)}
+                        >
+                            {label}
+                        </button>
+                    ))}
+                </div>
                 <div className="finder-foot">
                     <button
                         className="advanced"
@@ -521,6 +566,7 @@ function Discover({
                             setActive(false)
                             setQuery("")
                             setReviewFilter("all")
+                            setOwnershipFilter("all")
                         }}
                     >
                         Reset preferences
@@ -609,6 +655,7 @@ function Discover({
                                     setQuery("")
                                     setActive(false)
                                     setReviewFilter("all")
+                                    setOwnershipFilter("all")
                                 }}
                             >
                                 Show curated picks

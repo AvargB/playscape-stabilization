@@ -14,8 +14,11 @@ import {
     type PrototypeTransaction,
     type PurchaseType,
 } from "./types"
+import type { CartItem } from "./cart"
+import { getGameEdition } from "./edition"
 import {
     buildCheckoutSummary,
+    calculateCartTotals,
     formatPrototypePrice,
     formatTransactionDate,
     isDirectFriend,
@@ -29,6 +32,10 @@ export interface CheckoutDialogProps {
     game?: GameRecord
     /** Multi-game entry point used by the cart. */
     games?: GameRecord[]
+    /** Edition-aware cart lines; falls back to standard editions when omitted. */
+    items?: CartItem[]
+    /** Canonical owned IDs used to revalidate immediately before recording. */
+    ownedIds?: number[]
     sessionId: string
     initialPurchaseType?: PurchaseType
     /** "review", "payment", and "complete" are the displayed steps. */
@@ -41,6 +48,12 @@ export interface CheckoutDialogProps {
     onAddToCart?: (id: number) => void
     onRemoveFromCart?: (id: number) => void
     onClearCart?: () => void
+    /** Reopens the originating product page instead of dismissing the dialog. */
+    onBackToProduct?: () => void
+    /** Returns to the store after a completed simulation. */
+    onReturnToStore?: () => void
+    /** Opens the prototype library after a personal purchase receipt. */
+    onViewLibrary?: () => void
     onClose: () => void
     onComplete: (session: CheckoutSession) => CheckoutResult
     onViewProfile?: (id: string) => void
@@ -70,6 +83,8 @@ const DEMO_CARD_DETAILS = {
 export default function CheckoutDialog({
     game,
     games,
+    items,
+    ownedIds = [],
     sessionId,
     initialPurchaseType = "personal",
     initialStep = "review",
@@ -81,6 +96,9 @@ export default function CheckoutDialog({
     onAddToCart,
     onRemoveFromCart,
     onClearCart,
+    onBackToProduct,
+    onReturnToStore,
+    onViewLibrary,
     onClose,
     onComplete,
     onViewProfile,
@@ -93,12 +111,32 @@ export default function CheckoutDialog({
         () => checkoutGames.map((entry) => buildCheckoutSummary(entry)),
         [checkoutGames],
     )
+    const checkoutItems = React.useMemo<CartItem[]>(
+        () =>
+            checkoutGames.map((entry, index) => ({
+                gameId: entry.id,
+                edition:
+                    items?.[index]?.edition ??
+                    items?.find((item) => item.gameId === entry.id)?.edition ??
+                    getGameEdition(entry),
+            })),
+        [checkoutGames, items],
+    )
+    const totals = React.useMemo(
+        () => calculateCartTotals(checkoutItems, checkoutGames),
+        [checkoutItems, checkoutGames],
+    )
     const availableFriends = React.useMemo(
         () =>
             (friends ?? socialPeople).filter((person) =>
                 isDirectFriend(person.id, friends ?? socialPeople),
             ),
         [friends],
+    )
+    const ownedSet = React.useMemo(() => new Set(ownedIds), [ownedIds])
+    const staleOwnedGames = React.useMemo(
+        () => checkoutGames.filter((entry) => ownedSet.has(entry.id)),
+        [checkoutGames, ownedSet],
     )
     const completedTransactions = React.useMemo(() => asArray(initialCompleted), [initialCompleted])
     const restored = completedTransactions[0]
@@ -186,6 +224,12 @@ export default function CheckoutDialog({
 
     function validateReview(): boolean {
         if (!validateSelection()) return false
+        if (purchaseType === "personal" && staleOwnedGames.length) {
+            setErrors([
+                "This game is already in your prototype library. It was not purchased again.",
+            ])
+            return false
+        }
         const validationErrors = buildSessions().flatMap((session) =>
             validateCheckoutSession(session),
         )
@@ -221,6 +265,7 @@ export default function CheckoutDialog({
         return checkoutGames.map((entry, index) => ({
             id: checkoutGames.length === 1 ? sessionId : `${sessionId}-${entry.id}-${index}`,
             gameId: entry.id,
+            edition: checkoutItems[index]?.edition ?? getGameEdition(entry),
             purchaseType,
             recipientId: isGift ? recipientId : null,
             giftMessage: isGift ? giftMessage : "",
@@ -296,6 +341,15 @@ export default function CheckoutDialog({
                         <span>
                             <strong>{entry.title}</strong>
                             <small>
+                                {checkoutItems[index]?.edition ?? summaries[index].edition}
+                                {cartMode && (
+                                    <span className="chk-item-price">
+                                        {" · "}
+                                        {formatPrototypePrice(summaries[index].price)}
+                                    </span>
+                                )}
+                            </small>
+                            <small>
                                 {summaries[index].developer
                                     ? summaries[index].developer
                                     : "Developer not listed"}
@@ -320,6 +374,46 @@ export default function CheckoutDialog({
         )
     }
 
+    function orderTotals() {
+        if (!cartMode) return null
+        return (
+            <dl className="chk-totals" aria-label="Prototype cart totals">
+                <div>
+                    <dt>Subtotal</dt>
+                    <dd>{formatPrototypePrice(totals.subtotal)}</dd>
+                </div>
+                <div>
+                    <dt>Total</dt>
+                    <dd>{formatPrototypePrice(totals.total)}</dd>
+                </div>
+            </dl>
+        )
+    }
+
+    function checkoutSteps() {
+        const steps = [
+            { id: "review", label: "Review order" },
+            { id: "method", label: "Purchase method" },
+            { id: "payment", label: "Fake payment" },
+            { id: "complete", label: "Receipt" },
+        ] as const
+        const activeStep = step === "review" ? "review" : step === "complete" ? "complete" : step
+        return (
+            <ol className="chk-step-track" aria-label="Prototype checkout progress">
+                {steps.map((entry, index) => (
+                    <li
+                        key={entry.id}
+                        data-step={entry.id}
+                        data-active={activeStep === entry.id ? "true" : undefined}
+                    >
+                        <span>{String(index + 1).padStart(2, "0")}</span>
+                        {entry.label}
+                    </li>
+                ))}
+            </ol>
+        )
+    }
+
     function receiptItem(entry: PrototypeTransaction, showSuccess = false) {
         const game = checkoutGames.find((item) => item.id === entry.gameId)
         const summary = game ? buildCheckoutSummary(game) : null
@@ -339,6 +433,9 @@ export default function CheckoutDialog({
                         {entry.type === "gift" ? "Prototype gift" : "Prototype purchase"}
                     </div>
                     <h3>{summary?.title ?? `Game ${entry.gameId}`}</h3>
+                    <small className="chk-edition">
+                        {entry.edition ?? getGameEdition(game ?? undefined)}
+                    </small>
                     {itemRecipient && (
                         <div className="chk-person">
                             <AvatarView id={itemRecipient.id} size={30} />
@@ -430,6 +527,17 @@ export default function CheckoutDialog({
                 <p className="chk-disclaimer" role="note">
                     {CHECKOUT_DISCLAIMER}
                 </p>
+                {step !== "complete" &&
+                    purchaseType === "personal" &&
+                    staleOwnedGames.length > 0 && (
+                        <p className="chk-stale-cart" role="status">
+                            {staleOwnedGames
+                                .map((entry) => entry.title)
+                                .join(", ")}{" "}
+                            {staleOwnedGames.length === 1 ? "is" : "are"} already in your prototype library and cannot be purchased again.
+                        </p>
+                    )}
+                {checkoutSteps()}
 
                 {step === "complete" && completed.length ? (
                     <div className="chk-complete" data-checkout-complete="true">
@@ -447,6 +555,27 @@ export default function CheckoutDialog({
                                     onClick={() => onViewProfile(receiptRecipient.id)}
                                 >
                                     View recipient’s profile
+                                </button>
+                            )}
+                            {!isGiftReceipt && onViewLibrary && (
+                                <button
+                                    className="web-secondary"
+                                    type="button"
+                                    onClick={() => {
+                                        onClose()
+                                        onViewLibrary()
+                                    }}
+                                >
+                                    View in library
+                                </button>
+                            )}
+                            {onReturnToStore && (
+                                <button
+                                    className="web-secondary"
+                                    type="button"
+                                    onClick={onReturnToStore}
+                                >
+                                    Return to store
                                 </button>
                             )}
                             <button className="primary" type="button" onClick={onClose}>
@@ -595,6 +724,7 @@ export default function CheckoutDialog({
                                     {cartMode ? "Your games" : "Your game"}
                                 </div>
                                 {orderList()}
+                                {orderTotals()}
                                 {cartMode && onClearCart && (
                                     <button
                                         type="button"
@@ -730,6 +860,16 @@ export default function CheckoutDialog({
                                     disabled={submitting}
                                 >
                                     Add to cart
+                                </button>
+                            )}
+                            {onBackToProduct && !cartMode && (
+                                <button
+                                    className="web-secondary"
+                                    type="button"
+                                    onClick={onBackToProduct}
+                                    disabled={submitting}
+                                >
+                                    Back to game
                                 </button>
                             )}
                             <button className="primary" type="submit" disabled={submitting}>

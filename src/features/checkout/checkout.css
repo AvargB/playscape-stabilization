@@ -626,6 +626,120 @@
 
 .ps .chk-errors { margin: 0; font-size: 12px; }
 
+/* Progress, edition, and price context are all prototype-only labels. */
+.ps .chk-step-track {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  margin: 0 0 18px;
+  padding: 0;
+  list-style: none;
+}
+.ps .chk-step-track li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 7px 8px;
+  border: 1px solid var(--line);
+  border-radius: 8px;
+  color: var(--muted);
+  font-size: 10px;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+.ps .chk-step-track li[data-active="true"] {
+  border-color: var(--accent);
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
+}
+.ps .chk-step-track li > span { font-weight: 700; opacity: 0.7; }
+.ps .chk-item-price { color: var(--accent); font-weight: 600; }
+.ps .chk-edition { display: block; margin-top: 4px; color: var(--muted); font-size: 11px; }
+.ps .chk-totals {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+  margin: 14px 0 0;
+  padding: 12px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg);
+}
+.ps .chk-totals > div { display: flex; justify-content: space-between; gap: 10px; }
+.ps .chk-totals dt { color: var(--muted); font-size: 11px; text-transform: uppercase; letter-spacing: .08em; }
+.ps .chk-totals dd { margin: 0; font-size: 11px; font-weight: 700; text-align: right; }
+
+.ps .chk-owned-badge {
+  border-color: var(--accent);
+  color: var(--accent);
+}
+
+.ps .chk-owned-note,
+.ps .chk-stale-cart {
+  margin: 0 0 14px;
+  padding: 10px 13px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 10px;
+  background: color-mix(in srgb, var(--accent) 9%, var(--surface));
+  color: var(--text);
+  font-size: 12px;
+  line-height: 1.55;
+}
+
+.ps .chk-profile-summary p { margin-bottom: 12px; color: var(--muted); }
+
+.ps .ps-reset-card {
+  margin-top: 28px;
+  padding: 20px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  background: var(--surface);
+}
+
+.ps .ps-reset-card h3 { font: 700 20px/1.2 var(--heading); }
+.ps .ps-reset-card > p { margin-top: 8px; color: var(--muted); font-size: 12px; line-height: 1.6; }
+.ps .ps-reset-actions,
+.ps .ps-reset-confirm { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 14px; }
+.ps .ps-reset-actions button,
+.ps .ps-reset-confirm button { min-height: 38px; padding: 9px 14px; font-size: 12px; }
+.ps .ps-reset-confirm {
+  flex-direction: column;
+  align-items: flex-start;
+  padding: 14px;
+  border: 1px solid color-mix(in srgb, var(--accent) 45%, var(--line));
+  border-radius: 11px;
+  background: color-mix(in srgb, var(--accent) 8%, var(--bg));
+}
+.ps .ps-reset-confirm p { color: var(--text); font-size: 12px; line-height: 1.6; }
+.ps .ps-reset-confirm .ps-reset-actions { margin-top: 0; }
+
+.ps .webgraph-activity {
+  margin: 0 23px 12px;
+  padding: 12px 14px;
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  background: color-mix(in srgb, var(--surface) 85%, transparent);
+}
+.ps .webgraph-activity > strong { font-size: 11px; letter-spacing: .06em; text-transform: uppercase; }
+.ps .webgraph-links { display: flex; flex-wrap: wrap; gap: 7px; margin-top: 9px; }
+.ps .webgraph-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  max-width: 100%;
+  padding: 6px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--text);
+  font-size: 11px;
+  text-align: left;
+}
+.ps .webgraph-link:hover { border-color: var(--accent); color: var(--accent); }
+.ps .webgraph-link span { color: var(--muted); font-size: 9px; text-transform: uppercase; }
+
+.ps .gift-library small { display: block; padding: 0 8px 8px; color: var(--accent); font-size: 9px; }
+
 .ps .chk-payment-card,
 .ps .chk-payment-form .chk-footer { max-width: 640px; }
 .ps .chk-payment-note {
@@ -691,6 +805,8 @@
   .ps .checkout-modal .modal-head h2 { font-size: 30px; }
   .ps .chk-layout { grid-template-columns: 1fr; }
   .ps .chk-choice-row { grid-template-columns: 1fr 1fr; }
+  .ps .chk-step-track { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .ps .chk-totals { grid-template-columns: 1fr; }
   .ps .chk-payment-grid { grid-template-columns: 1fr; }
   .ps .chk-item { grid-template-columns: 88px minmax(0, 1fr) auto; }
   .ps .chk-item img { width: 88px; }

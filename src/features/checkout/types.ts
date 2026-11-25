@@ -24,6 +24,8 @@ export type CheckoutSession = {
     /** Stable per dialog opening; prevents duplicate submissions. */
     id: string
     gameId: number
+    /** Optional edition selected in the cart; defaults to the standard edition. */
+    edition?: string
     purchaseType: PurchaseType
     recipientId: string | null
     giftMessage: string
@@ -34,6 +36,9 @@ export type PrototypeTransaction = {
     id: string
     sessionId: string
     gameId: number
+    /** Catalog-resolved at purchase time; identity still uses gameId. */
+    title: string
+    edition?: string
     senderId: string
     recipientId: string | null
     type: PurchaseType
@@ -55,6 +60,7 @@ export type CheckoutState = {
 
 export type CheckoutSummary = {
     gameId: number
+    edition: string
     title: string
     developer: string | null
     publisher: string | null

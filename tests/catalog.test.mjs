@@ -2,7 +2,8 @@ import test from 'node:test'
 import assert from 'node:assert/strict'
 import { buildComparisonSummary, buildFriendGameSignals, buildWishlistRecommendations, buildWishlistSummary, filterGames, gameCatalog, getGameById, getGameBySlug, getGamesByIds, resolveGameRecord, searchGames, sortGames, validateGameCatalog } from '../src/data/games.ts'
 import { applyInviteDecision, buildInviteSuggestions, getPendingInviteSummary } from '../src/socialState.ts'
-import { buildSocialGraph, initialCircles, socialPeople } from '../src/socialData.ts'
+import { buildSocialGraph, initialActivity, initialCircles, socialPeople } from '../src/socialData.ts'
+import { prototypeReviews } from '../src/features/reviews/model.ts'
 import React from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { COMMUNITY_NAVIGATION, MainNavigation, MOBILE_NAVIGATION, PRIMARY_NAVIGATION, STORE_NAVIGATION } from '../src/components/navigation/MainNavigation.tsx'
@@ -57,6 +58,91 @@ test('seed catalog has unique, valid records and preserves the prototype IDs whi
   assert.ok(gameCatalog.some((game) => game.metadataStatus === 'verified'))
 })
 
+test('catalog titles match their canonical Steam app IDs', () => {
+  const canonicalTitles = new Map([
+    [219760, 'Beyond Divinity'],
+    [1200, 'Red Orchestra: Ostfront 41-45'],
+    [747200, 'Keplerth'],
+    [600480, 'Megaquarium'],
+    [1092790, 'Inscryption'],
+    [650700, 'Yume Nikki'],
+    [864050, 'Sacred Stones OST'],
+    [1605220, 'Dune: Spice Wars'],
+    [275850, "No Man's Sky"],
+    [257510, 'The Talos Principle'],
+    [1129580, 'Medieval Dynasty'],
+    [488790, 'South Park™: The Fractured But Whole™'],
+    [381210, 'Dead by Daylight'],
+  ])
+
+  for (const [id, title] of canonicalTitles) {
+    assert.equal(getGameById(id)?.title, title, `App ID ${id} must display its canonical title`)
+  }
+
+  const catalogTitles = gameCatalog.map((game) => game.title)
+  assert.equal(catalogTitles.includes('Red Dead Redemption 2'), false)
+  assert.equal(catalogTitles.includes('Dead Cells'), false)
+  assert.equal(catalogTitles.includes('The Sims 4'), false)
+})
+
+test('seeded review and activity copy matches canonical game identities', () => {
+  const correctedIds = new Set([
+    219760, 1200, 747200, 600480, 1092790, 650700, 864050,
+    1605220, 275850, 257510, 1129580, 488790, 381210,
+  ])
+  const stalePhrases = [
+    'riding and looking at the sunset',
+    'odd little encounter',
+    'strange in the most charming',
+    'pinball detour',
+    'wordless storytelling',
+    'quiet became stillness',
+    'tiny cat',
+    'cleaning loop',
+    'palate cleanser',
+    'spellcraft',
+    'permadeath',
+    'build a story instead',
+    'novelty wears out',
+    'folklore',
+    'endlessly tweakable',
+  ]
+  const canonicalPhrases = new Map([
+    [219760, 'companions'],
+    [1200, 'Eastern Front'],
+    [747200, 'planet'],
+    [600480, 'exhibits'],
+    [1092790, 'card table'],
+    [650700, 'Dream logic'],
+    [864050, 'tracks'],
+    [1605220, 'Arrakis'],
+    [275850, 'universe'],
+    [257510, 'puzzles'],
+    [1129580, 'village'],
+    [488790, 'satire'],
+    [381210, 'horror story'],
+  ])
+
+  for (const review of prototypeReviews.filter((item) => correctedIds.has(item.gameId))) {
+    assert.equal(
+      stalePhrases.some((phrase) => review.text.toLowerCase().includes(phrase.toLowerCase())),
+      false,
+      `Review ${review.id} still describes the game that used to own app ID ${review.gameId}`,
+    )
+  }
+  for (const [id, phrase] of canonicalPhrases) {
+    assert.ok(
+      prototypeReviews.some((review) => review.gameId === id && review.text.includes(phrase)),
+      `App ID ${id} needs review copy about its actual game`,
+    )
+  }
+
+  const keplerthActivity = initialActivity.find((item) => item.id === 'a9' && item.game === 747200)
+  assert.ok(keplerthActivity)
+  assert.match(keplerthActivity.quote, /planet|base-building/)
+  assert.doesNotMatch(keplerthActivity.quote, /odd little encounter/)
+})
+
 test('search matches title, description, genre, and mood metadata', () => {
   assert.equal(searchGames('stardew').length, 1)
   assert.equal(searchGames('wilderness')[0].title, 'Firewatch')
@@ -84,7 +170,7 @@ test('playtime ranges and player modes are supported', () => {
   assert.ok(shortSessionGames.includes('Stardew Valley'))
   assert.deepEqual(filterGames({ minSessionMinutes: 61, maxSessionMinutes: 120 }).map((game) => game.title).includes('Sea of Thieves'), true)
   assert.ok(filterGames({ minSessionMinutes: 121 }).length >= 4)
-  assert.ok(filterGames({ minSessionMinutes: 121 }).some((game) => game.title === 'Red Dead Redemption 2'))
+  assert.ok(filterGames({ minSessionMinutes: 121 }).some((game) => game.title === 'Red Orchestra: Ostfront 41-45'))
   assert.deepEqual(filterGames({ playerModes: ['Cooperative'] }).map((game) => game.title).includes('Sea of Thieves'), true)
   assert.ok(filterGames({ playerModes: ['Online multiplayer'] }).some((game) => game.title === 'Sea of Thieves'))
   assert.ok(filterGames({ playerModes: ['Online multiplayer'] }).length >= 1)

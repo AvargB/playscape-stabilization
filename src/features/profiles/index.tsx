@@ -3,6 +3,7 @@ import * as React from "react"
 import { Icon } from "../../components/Icon"
 import type { NavigationDestination } from "../../components/navigation/NavigationItem"
 import { getGameById } from "../../data/games"
+import type { PrototypeResetScope } from "../../prototypeReset"
 import {
     initialFriendships,
     socialPeople,
@@ -47,6 +48,9 @@ export interface ProfilesProps {
         state: CheckoutState
         onRespondToGift?: (id: string, decision: GiftDecision) => GiftResponseResult
     }
+    /** Full canonical ownership list, including seeded demo games. */
+    ownedIds?: number[]
+    onResetPrototypeData?: (scope: PrototypeResetScope) => void
 }
 
 export default function PlayerProfile({
@@ -60,8 +64,11 @@ export default function PlayerProfile({
     initialTab = "Overview",
     initialAudience = "Myself",
     checkout,
+    ownedIds = [],
+    onResetPrototypeData,
 }: ProfilesProps) {
     const { activity, state, saved, go, setDialog } = social
+    const [resetScope, setResetScope] = React.useState<PrototypeResetScope | null>(null)
     const RenderAvatar = renderAvatar
     const RenderSmallGame = renderSmallGame
     const RenderActivityCard = renderActivityCard
@@ -239,6 +246,22 @@ export default function PlayerProfile({
                         <div>
                             {tab === "Overview" ? (
                                 <>
+                                    {own && (
+                                        <section className="profile-section chk-profile-summary">
+                                            <div className="section-head">
+                                                <h2>Your prototype library</h2>
+                                            </div>
+                                            <p role="status">
+                                                Owned games: {ownedIds.length}. Personal purchases and accepted gifts appear here immediately.
+                                            </p>
+                                            <button
+                                                className="web-secondary"
+                                                onClick={() => setTab(giftsTab)}
+                                            >
+                                                View library & orders <Icon name="arrow" size={14} />
+                                            </button>
+                                        </section>
+                                    )}
                                     <section className="profile-section">
                                         <div className="section-head">
                                             <h2>Currently in their world</h2>
@@ -414,14 +437,65 @@ export default function PlayerProfile({
                                     )}
                                 </div>
                             ) : tab === giftsTab ? (
-                                <GiftHistory
-                                    person={p}
-                                    own={own}
-                                    state={checkoutState}
-                                    renderAvatar={renderAvatar}
-                                    onOpenGame={onOpenGame}
-                                    onRespondToGift={checkout?.onRespondToGift}
-                                />
+                                <>
+                                    <GiftHistory
+                                        person={p}
+                                        own={own}
+                                        state={checkoutState}
+                                        renderAvatar={renderAvatar}
+                                        onOpenGame={onOpenGame}
+                                        onRespondToGift={checkout?.onRespondToGift}
+                                        ownedIds={ownedIds}
+                                    />
+                                    {own && onResetPrototypeData && (
+                                        <section className="ps-reset-card" aria-labelledby="ps-reset-heading">
+                                            <div className="section-head">
+                                                <h3 id="ps-reset-heading">Reset Prototype Data</h3>
+                                            </div>
+                                            <p>
+                                                PLAYSCAPE is a prototype. Resetting clears locally stored purchases, gift records, and related account progress. No real account, payment, or order data is affected.
+                                            </p>
+                                            <div className="ps-reset-actions">
+                                                <button
+                                                    className="web-secondary"
+                                                    onClick={() => setResetScope("purchases")}
+                                                >
+                                                    Reset purchases & history
+                                                </button>
+                                                <button
+                                                    className="web-secondary"
+                                                    onClick={() => setResetScope("all")}
+                                                >
+                                                    Reset all prototype account data
+                                                </button>
+                                            </div>
+                                            {resetScope && (
+                                                <div className="ps-reset-confirm" role="alertdialog" aria-label="Confirm prototype reset">
+                                                    <p>
+                                                        {resetScope === "purchases"
+                                                            ? "This clears prototype purchases, gift records, ownership, history, and the local cart. Wishlists, reviews, circles, and comparison selections stay as they are."
+                                                            : "This also clears saved games, social activity, reviews, and comparisons, then restores the seeded prototype state."}
+                                                    </p>
+                                                    <button
+                                                        className="primary"
+                                                        onClick={() => {
+                                                            onResetPrototypeData(resetScope)
+                                                            setResetScope(null)
+                                                        }}
+                                                    >
+                                                        Confirm reset
+                                                    </button>
+                                                    <button
+                                                        className="text-button"
+                                                        onClick={() => setResetScope(null)}
+                                                    >
+                                                        Cancel
+                                                    </button>
+                                                </div>
+                                            )}
+                                        </section>
+                                    )}
+                                </>
                             ) : tab === "Wishlist" ? (
                                 <>
                                     <div className="summary">

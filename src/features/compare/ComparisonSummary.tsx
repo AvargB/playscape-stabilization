@@ -21,6 +21,7 @@ export interface ComparisonSummaryProps {
     onToggleSaved: (id: number) => void
     onOpenGame: (game: GameRecord | number) => void
     onCheckout?: (id: number, type: PurchaseType) => void
+    ownedIds?: number[]
 }
 
 export default function ComparisonSummary({
@@ -32,7 +33,9 @@ export default function ComparisonSummary({
     onToggleSaved,
     onOpenGame,
     onCheckout,
+    ownedIds = [],
 }: ComparisonSummaryProps) {
+    const ownedSet = new Set(ownedIds)
     const [preferredPlatform, setPreferredPlatform] = React.useState("")
     const summary = React.useMemo(
         () => getComparisonSummary(games.map((game) => game.id), catalog),
@@ -179,6 +182,11 @@ export default function ComparisonSummary({
                             >
                                 <strong>{game.title}</strong>
                             </button>
+                            {ownedSet.has(game.id) && (
+                                <span className="pill chk-owned-badge" data-owned-game={game.id}>
+                                    In prototype library
+                                </span>
+                            )}
                             <button
                                 type="button"
                                 className="web-secondary"
@@ -207,13 +215,22 @@ export default function ComparisonSummary({
                             >
                                 View details
                             </button>
-                            {onCheckout && (
+                            {onCheckout && !ownedSet.has(game.id) && (
                                 <button
                                     type="button"
                                     className="web-secondary"
                                     onClick={() => onCheckout(game.id, "personal")}
                                 >
                                     Simulated checkout
+                                </button>
+                            )}
+                            {ownedSet.has(game.id) && (
+                                <button
+                                    type="button"
+                                    className="web-secondary"
+                                    onClick={() => onOpenGame(game.id)}
+                                >
+                                    In prototype library
                                 </button>
                             )}
                             {game.officialWebsite && (

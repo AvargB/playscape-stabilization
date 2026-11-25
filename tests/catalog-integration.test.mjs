@@ -58,10 +58,10 @@ test('game IDs remain stable across the catalog', () => {
     assert.deepEqual(ids, [...new Set(ids)], 'catalog contains duplicate game IDs')
     assert.ok(ids.includes(413150), 'Stardew Valley ID preserved')
     assert.ok(ids.includes(1055540), 'A Short Hike ID preserved')
-    assert.ok(ids.includes(972660), 'A Way Out ID preserved')
-    assert.ok(ids.includes(383870), 'Spiritfarer ID preserved')
+    assert.ok(ids.includes(972660), 'Spiritfarer ID preserved')
+    assert.ok(ids.includes(383870), 'Firewatch ID preserved')
     assert.ok(ids.includes(1145360), 'Hades ID preserved')
-    assert.ok(ids.includes(1172620), 'It Takes Two ID preserved')
+    assert.ok(ids.includes(1172620), 'Sea of Thieves ID preserved')
 })
 
 test('every catalog record resolves through getGameById and resolveGameRecord', () => {

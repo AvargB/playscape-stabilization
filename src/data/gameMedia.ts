@@ -1,8 +1,8 @@
 /**
  * Verified presentation media sourced from Steam's public app metadata.
  * Generated from store.steampowered.com/appdetails and keyed by the stable
- * catalog game ID. Only entries whose Steam title matches the catalog are
- * included; mismatched demo IDs are deliberately left without media.
+ * catalog game ID. Only entries with sourced footage are included; other
+ * catalog games fall back to their Steam cover artwork.
  */
 
 export type GameMediaSeed = {

@@ -4,6 +4,7 @@ import { Icon } from "../../components/Icon"
 import { type GameRecord } from "../../data/games"
 import {
     socialPeople,
+    type SocialActivity,
     type SocialGraph,
     type SocialGraphNode,
     type SocialPerson,
@@ -52,6 +53,9 @@ export interface TheWebProps {
         /** Derived once from the shared social model, including stored actions. */
         graph: SocialGraph
         state: SocialState
+        /** Prototype ledger overlays; never stored in the social graph itself. */
+        ownedIdsByPerson?: Record<string, number[]>
+        prototypeActivity?: SocialActivity[]
     }
 }
 
@@ -209,25 +213,44 @@ function gameTone(edges: WebEdge[], gameId: string): WebNode["tone"] {
  * who own, play, or wishlist them. No random seed means the graph is stable
  * between renders and refreshes.
  */
-export function buildWebGraphModel(graph: SocialGraph): WebGraphModel {
+export function buildWebGraphModel(
+    graph: SocialGraph,
+    ownedIdsByPerson: Record<string, number[]> = {},
+): WebGraphModel {
     const peopleSource = graph.nodes
         .filter(isPersonNode)
         .sort((a, b) => (a.id === "you" ? -1 : b.id === "you" ? 1 : a.name.localeCompare(b.name)))
     const personIds = new Set(peopleSource.map((node) => node.id))
+    const overlayGameIds = new Set(
+        Object.values(ownedIdsByPerson).flat().map((gameId) => String(gameId)),
+    )
     const gamesSource = graph.nodes.filter(
         (node) =>
             node.type === "Game" &&
-            graph.relationships.some(
-                ([from, to, label]) =>
-                    GAME_LINK_LABELS.has(label) &&
-                    ((personIds.has(from) && to === node.id) ||
-                        (personIds.has(to) && from === node.id))
-            )
+            (overlayGameIds.has(node.id) ||
+                graph.relationships.some(
+                    ([from, to, label]) =>
+                        GAME_LINK_LABELS.has(label) &&
+                        ((personIds.has(from) && to === node.id) ||
+                            (personIds.has(to) && from === node.id))
+                ))
     )
     const gameIds = new Set(gamesSource.map((node) => node.id))
 
+    /* Accepted gifts and simulated purchases are ledger overlays. Existing
+       edge de-duplication keeps them from doubling a seeded Owned edge. */
+    const overlayRelationships: Array<[string, string, string]> = []
+    for (const [personId, ids] of Object.entries(ownedIdsByPerson)) {
+        if (!personIds.has(personId)) continue
+        for (const gameId of ids) {
+            const nodeId = String(gameId)
+            if (gameIds.has(nodeId)) overlayRelationships.push([personId, nodeId, "Owned"])
+        }
+    }
+    const relationships = [...graph.relationships, ...overlayRelationships]
+
     const edges: WebEdge[] = []
-    for (const [from, to, label] of graph.relationships) {
+    for (const [from, to, label] of relationships) {
         if (!GAME_LINK_LABELS.has(label)) continue
         const person = personIds.has(from) ? from : personIds.has(to) ? to : null
         const game = gameIds.has(from) ? from : gameIds.has(to) ? to : null
@@ -467,7 +490,10 @@ export default function TheWeb({
     const moved = React.useRef(false)
     const lastFocus = React.useRef(initialSelection)
 
-    const model = React.useMemo(() => buildWebGraphModel(community.graph), [community.graph])
+    const model = React.useMemo(
+        () => buildWebGraphModel(community.graph, community.ownedIdsByPerson),
+        [community.graph, community.ownedIdsByPerson],
+    )
 
     React.useEffect(() => {
         if (!canvas.current) return
@@ -843,6 +869,25 @@ export default function TheWeb({
                         Reset view
                     </button>
                 </div>
+
+                {community.prototypeActivity && community.prototypeActivity.length > 0 && (
+                    <section className="webgraph-activity" aria-label="Prototype purchase activity">
+                        <strong>Prototype purchase activity</strong>
+                        <div className="webgraph-links">
+                            {community.prototypeActivity.slice(0, 6).map((item) => (
+                                <button
+                                    key={item.id}
+                                    className="webgraph-link"
+                                    data-web-activity={item.id}
+                                    onClick={() => setSelected(String(item.game))}
+                                >
+                                    <span>{item.category}</span>
+                                    {item.action}
+                                </button>
+                            ))}
+                        </div>
+                    </section>
+                )}
 
                 <p className="webgraph-hint">Drag to pan · Scroll or pinch to zoom</p>
 

@@ -29,6 +29,7 @@ export type ReviewState = {
     localReviews: ReviewRecord[]
     myReviews: ReviewRecord[]
     submitReview: (draft: ReviewDraft, revisionOf?: string) => ReviewRecordResult
+    reset: () => void
 }
 
 /**
@@ -91,5 +92,8 @@ export function useReviews({
         [localReviews, personId, savedIds],
     )
 
-    return { reviews, localReviews, myReviews, submitReview }
+    /** Explicit full-reset support; seeded prototype reviews remain available. */
+    const reset = React.useCallback(() => setLocalReviews([]), [])
+
+    return { reviews, localReviews, myReviews, submitReview, reset }
 }

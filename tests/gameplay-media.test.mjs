@@ -296,6 +296,49 @@ test("Discover cards retain navigation and do not block it with the preview", ()
     assert.match(mediaCss, /\.game-media-preview \{[\s\S]*?pointer-events: none/)
 })
 
+test("explore prompt is hidden on cards that already show a video preview", () => {
+    const props = {
+        saved: [],
+        toggle() {},
+        openGame() {},
+        changeView() {},
+        mood: "Spring",
+        setMood() {},
+        prefs: {},
+        setPrefs() {},
+        active: false,
+        setActive() {},
+        query: "",
+        setQuery() {},
+        socialDiscovery: false,
+        setSocialDiscovery() {},
+        panel: "",
+        setPanel() {},
+        find() {},
+        title: "What are you in the mood for?",
+        seasons: [],
+        resultRef: React.createRef(),
+        reviews: [],
+    }
+    const withVideo = renderToStaticMarkup(
+        React.createElement(Discover, { ...props, games: [fixtureGame] }),
+    )
+    const withoutVideo = renderToStaticMarkup(
+        React.createElement(Discover, { ...props, games: [noMediaGame] }),
+    )
+
+    assert.match(withVideo, /aria-label="Explore Stardew Valley"/)
+    assert.match(withVideo, /game-media-preview-toggle/)
+    assert.doesNotMatch(withVideo, /Explore game/)
+    assert.match(withoutVideo, /aria-label="Explore Stardew Valley"/)
+    assert.match(withoutVideo, /Explore game/)
+    assert.doesNotMatch(withoutVideo, /game-media-preview-toggle/)
+
+    const appSource = source("../src/PLAYSCAPE-cleaner.tsx")
+    assert.match(appSource, /hasVideoPreview = Boolean\(getFeaturedPreview\(g\)\)/)
+    assert.match(appSource, /!hasVideoPreview && \([\s\S]*?className="explore"/)
+})
+
 test("product gallery renders video controls for video media", () => {
     const markup = renderToStaticMarkup(
         React.createElement(GameMediaGallery, { game: fixtureGame }),

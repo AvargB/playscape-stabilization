@@ -27,6 +27,8 @@ export interface GiftHistoryProps {
     renderAvatar?: (props: { id: string; size?: number }) => React.ReactNode
     onOpenGame?: (id: number) => void
     onRespondToGift?: (id: string, decision: GiftDecision) => GiftResponseResult
+    /** Full canonical library supplied by the app; ledger-only when omitted. */
+    ownedIds?: number[]
 }
 
 function PersonChip({
@@ -64,12 +66,27 @@ export default function GiftHistory({
     renderAvatar,
     onOpenGame,
     onRespondToGift,
+    ownedIds = [],
 }: GiftHistoryProps) {
     const [responseErrors, setResponseErrors] = React.useState<Record<string, string>>({})
     const received = getReceivedGifts(state, person.id)
     const sent = own ? getSentGifts(state, "you") : []
     const purchases = own ? getPersonalPurchases(state, "you") : []
-    const libraryIds = getOwnedGameIds(state, person.id)
+    const libraryIds = own && ownedIds.length
+        ? Array.from(new Set(ownedIds))
+        : getOwnedGameIds(state, person.id)
+
+    const acquisitionLabel = (id: number) => {
+        if (purchases.some((entry) => entry.gameId === id)) return "Personal purchase"
+        if (
+            received.some(
+                (entry) => entry.gameId === id && entry.giftStatus === "accepted",
+            )
+        ) {
+            return "Accepted gift"
+        }
+        return "Seeded prototype game"
+    }
 
     function gameTitle(id: number): string {
         return getGameById(id)?.title ?? "Unavailable game"
@@ -319,15 +336,18 @@ export default function GiftHistory({
                         <div className="section-head">
                             <h2>Prototype library</h2>
                             <p className="social-muted">
-                                Local overlay from simulated purchases and accepted gifts.
+                                Seeded games, simulated purchases, and accepted gifts — tied to canonical game IDs.
                             </p>
                         </div>
                         {libraryIds.length ? (
                             <ul className="gift-library" role="list">
                                 {libraryIds.map((id) => (
-                                    <li key={id}>
+                                    <li key={id} data-owned-game={id}>
                                         <img src={steam(id)} alt="" />
-                                        <span>{gameTitle(id)}</span>
+                                        <span>
+                                            {gameTitle(id)}
+                                            {own && <small>{acquisitionLabel(id)}</small>}
+                                        </span>
                                     </li>
                                 ))}
                             </ul>

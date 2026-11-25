@@ -31,6 +31,7 @@ export interface ComparePageProps {
     onBrowse: () => void
     reviews?: ReviewRecord[]
     onCheckout?: (id: number, type: PurchaseType) => void
+    ownedIds?: number[]
 }
 
 export default function ComparePage({
@@ -45,6 +46,7 @@ export default function ComparePage({
     onBrowse,
     reviews = [],
     onCheckout,
+    ownedIds = [],
 }: ComparePageProps) {
     const [filter, setFilter] = React.useState<ComparisonFilter>("all")
     const [infoTarget, setInfoTarget] = React.useState<GameInfoTarget | null>(null)
@@ -221,6 +223,7 @@ export default function ComparePage({
                         onRemove={handleRemove}
                         onToggleSaved={onToggleSaved}
                         onOpenGame={onOpenGame}
+                        ownedIds={ownedIds}
                         {...infoHandlers}
                     />
                     {selectedGames.length >= MIN_COMPARISON_GAMES && (
@@ -233,6 +236,7 @@ export default function ComparePage({
                             onToggleSaved={onToggleSaved}
                             onOpenGame={onOpenGame}
                             onCheckout={onCheckout}
+                            ownedIds={ownedIds}
                         />
                     )}
                 </>
