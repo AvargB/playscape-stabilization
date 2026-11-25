@@ -15,15 +15,20 @@ function claimPreview(token: symbol, stop: () => void) {
 
 export interface GameMediaPreviewProps {
     game: GameRecord
+    /** Selector for the artwork area that should start and stop playback. */
+    hostSelector?: string
 }
 
 /**
- * Compact, delayed, muted video preview overlay for game cards.
+ * Compact, delayed, muted video preview overlay for game artwork.
  * It never replaces the static cover markup and does not load a video until a
  * deliberate hover/focus or explicit button press activates it. Playable
  * trailers are used when the catalog has no gameplay footage.
  */
-export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
+export default function GameMediaPreview({
+    game,
+    hostSelector = ".game-art",
+}: GameMediaPreviewProps) {
     const media = React.useMemo(() => getFeaturedPreview(game), [game])
     const previewKind = media?.type === "trailer" ? "trailer" : "gameplay"
     const tokenRef = React.useRef<symbol>(Symbol("game-media-preview"))
@@ -105,7 +110,7 @@ export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
     }, [stop])
 
     React.useEffect(() => {
-        const art = wrapRef.current?.closest<HTMLElement>(".game-art")
+        const art = wrapRef.current?.closest<HTMLElement>(hostSelector)
         if (!art) return
         const onArtPointerEnter = (event: PointerEvent) => schedule(event.pointerType)
         const onArtFocusIn = () => schedule()
@@ -124,7 +129,7 @@ export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
             art.removeEventListener("focusin", onArtFocusIn)
             art.removeEventListener("focusout", onArtFocusOut)
         }
-    }, [schedule, stop])
+    }, [hostSelector, schedule, stop])
 
     React.useEffect(() => {
         if (!active) return

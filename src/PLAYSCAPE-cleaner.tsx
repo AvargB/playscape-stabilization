@@ -209,13 +209,19 @@ function ActivityCard({
                 <span className="activity-time">{item.time}</span>
             </header>
             <div className="activity-game">
-                <button
-                    className="activity-art"
-                    onClick={() => c.openGame(g)}
-                    aria-label={"Explore " + g.title}
-                >
-                    <img src={steam(g.id)} alt={g.title + " artwork"} />
-                </button>
+                <span className="activity-art-wrap">
+                    <button
+                        className="activity-art"
+                        onClick={() => c.openGame(g)}
+                        aria-label={"Explore " + g.title}
+                    >
+                        <img src={steam(g.id)} alt={g.title + " artwork"} />
+                    </button>
+                    <GameMediaPreview
+                        game={g}
+                        hostSelector=".activity-art-wrap"
+                    />
+                </span>
                 <div>
                     <div className="kicker">{item.category}</div>
                     <button

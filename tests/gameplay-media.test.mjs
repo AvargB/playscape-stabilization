@@ -205,10 +205,31 @@ test("card preview waits before activating and stops on pointer exit", () => {
     assert.match(previewSource, /onPointerLeave=\{stop\}/)
     assert.match(previewSource, /pointerType === "touch"/)
     assert.match(previewSource, /matchMedia\("\(prefers-reduced-motion: reduce\)"\)/)
-    assert.match(previewSource, /closest<HTMLElement>\("\.game-art"\)/)
+    assert.match(previewSource, /hostSelector = "\.game-art"/)
+    assert.match(previewSource, /closest<HTMLElement>\(hostSelector\)/)
     assert.match(previewSource, /art\.addEventListener\("pointerenter"/)
     assert.match(previewSource, /art\.addEventListener\("pointerleave"/)
     assert.match(previewSource, /art\.addEventListener\("focusin"/)
+})
+
+test("friend recommendation artwork uses the same hover trailer preview", () => {
+    const appSource = source("../src/PLAYSCAPE-cleaner.tsx")
+    const mediaStyles = source("../src/features/media/media.css")
+    assert.match(appSource, /<GameMediaPreview[\s\S]*?hostSelector="\.activity-art-wrap"/)
+    assert.match(mediaStyles, /\.ps \.activity-art-wrap \{/)
+    assert.match(mediaStyles, /\.ps \.activity-card:hover \.game-media-preview-toggle/)
+    assert.match(appSource, /view === "Discover" && <CommunityPreview \/>/)
+})
+
+test("the shared preview keeps its default artwork host optional", () => {
+    const markup = renderToStaticMarkup(
+        React.createElement(GameMediaPreview, {
+            game: fixtureGame,
+            hostSelector: ".activity-art-wrap",
+        }),
+    )
+    assert.match(markup, /game-media-preview-toggle/)
+    assert.match(markup, /Play gameplay preview for Stardew Valley/)
 })
 
 test("card preview is muted, poster-backed, and does not load eagerly", () => {
