@@ -9,6 +9,8 @@ interface AppLayoutProps {
     currentView: string
     atmosphere: string
     wishlistCount: number
+    cartCount?: number
+    onOpenCart?: () => void
     menuOpen: boolean
     query: string
     onNavigate: (destination: NavigationDestination) => void
@@ -22,6 +24,8 @@ export function AppLayout({
     currentView,
     atmosphere,
     wishlistCount,
+    cartCount,
+    onOpenCart,
     menuOpen,
     query,
     onNavigate,
@@ -36,6 +40,8 @@ export function AppLayout({
                 currentView={currentView}
                 atmosphere={atmosphere}
                 wishlistCount={wishlistCount}
+                cartCount={cartCount}
+                onOpenCart={onOpenCart}
                 menuOpen={menuOpen}
                 query={query}
                 onNavigate={onNavigate}

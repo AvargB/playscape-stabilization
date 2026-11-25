@@ -34,6 +34,28 @@ test('active favorites color only the filled heart, not the whole control', () =
     assert.doesNotMatch(css, /\.ps \.save\.saved\s*\{\s*color:var\(--favorite\)/)
 })
 
+test('favorite heart red is darker than the Autumn red', () => {
+    const css = readSrc('PLAYSCAPE-cleaner.tsx')
+    const favorite = css.match(/--favorite:\s*(#[0-9a-f]{6})/i)?.[1]?.toLowerCase()
+    const autumnAccents = [...css.matchAll(/\.ps\.autumn\s*\{\s*--accent:\s*(#[0-9a-f]{6})/gi)]
+        .map((match) => match[1].toLowerCase())
+    const autumnRed = '#d56a67'
+    const luminance = (hex) => {
+        const channels = [1, 3, 5].map((offset) => {
+            const value = parseInt(hex.slice(offset, offset + 2), 16) / 255
+            return value <= 0.03928 ? value / 12.92 : ((value + 0.055) / 1.055) ** 2.4
+        })
+        return 0.2126 * channels[0] + 0.7152 * channels[1] + 0.0722 * channels[2]
+    }
+
+    assert.ok(favorite)
+    assert.ok(autumnAccents.includes(autumnRed))
+    assert.ok(
+        luminance(favorite) < luminance(autumnRed),
+        `favorite ${favorite} must be darker than Autumn red ${autumnRed}`,
+    )
+})
+
 test('compare badge stays clear of the thumbnail explore label', () => {
     const css = readSrc('PLAYSCAPE-cleaner.tsx')
     const rule = css.match(/\.ps \.compare-card\{([^}]*)\}/)?.[1] || ''

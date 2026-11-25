@@ -39,6 +39,8 @@ interface MainNavigationProps {
     currentView: string
     atmosphere: string
     wishlistCount: number
+    cartCount?: number
+    onOpenCart?: () => void
     menuOpen: boolean
     query: string
     onNavigate: (destination: NavigationDestination) => void
@@ -51,6 +53,8 @@ export function MainNavigation({
     currentView,
     atmosphere,
     wishlistCount,
+    cartCount = 0,
+    onOpenCart,
     menuOpen,
     query,
     onNavigate,
@@ -121,6 +125,23 @@ export function MainNavigation({
                             }}
                         />
                     </label>
+                    {onOpenCart && (
+                        <button
+                            type="button"
+                            className="cart-button"
+                            aria-label={`Open prototype cart, ${cartCount} ${
+                                cartCount === 1 ? "game" : "games"
+                            }`}
+                            onClick={onOpenCart}
+                        >
+                            <Icon name="cart" size={17} />
+                            {cartCount > 0 && (
+                                <span className="cart-count" aria-hidden="true">
+                                    {cartCount}
+                                </span>
+                            )}
+                        </button>
+                    )}
                     <button
                         type="button"
                         className="avatar"

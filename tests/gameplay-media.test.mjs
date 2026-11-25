@@ -19,6 +19,12 @@ import {
 const source = (path) => readFileSync(new URL(path, import.meta.url), "utf8")
 
 const baseGame = getGameById(413150)
+const noMediaGame = {
+    ...baseGame,
+    media: [],
+    trailerUrl: undefined,
+    screenshots: undefined,
+}
 const fixtureGame = {
     ...baseGame,
     media: [
@@ -51,23 +57,50 @@ test("media contracts are declared once in the central catalog", () => {
     assert.match(catalogSource, /screenshots\?: string\[\]/)
 })
 
-test("catalog does not invent media URLs", () => {
-    assert.deepEqual(gameCatalog.filter((game) => game.media?.length), [])
-    assert.deepEqual(gameCatalog.filter((game) => game.trailerUrl), [])
-    assert.deepEqual(gameCatalog.filter((game) => game.screenshots?.length), [])
+test("catalog uses only verified Steam media sources", () => {
+    const withMedia = gameCatalog.filter((game) => game.media?.length)
+    assert.ok(withMedia.length > 0)
+    const urls = withMedia.flatMap((game) => game.media.map((item) => item.url))
+    assert.ok(urls.length > 0)
+    assert.equal(
+        urls.every(
+            (url) =>
+                url.startsWith("https://cdn.akamai.steamstatic.com/") ||
+                url.startsWith("https://shared.akamai.steamstatic.com/"),
+        ),
+        true,
+    )
     assert.equal(JSON.stringify(gameCatalog).includes("example.test"), false)
+    assert.equal(getGameById(381210)?.media?.length ?? 0, 0)
+
+    const stardewTypes = new Set(getGameById(413150)?.media?.map((item) => item.type))
+    assert.equal(stardewTypes.has("screenshot"), true)
+    assert.equal(stardewTypes.has("trailer"), true)
+
+    const catalogTypes = new Set(
+        withMedia.flatMap((game) => game.media.map((item) => item.type)),
+    )
+    assert.deepEqual([...catalogTypes].sort(), ["screenshot", "trailer"])
+    assert.equal(
+        gameCatalog.some((game) => game.media?.some((item) => item.type === "gameplay")),
+        false,
+    )
+    assert.equal(
+        gameCatalog.some((game) => game.media?.some((item) => item.featured)),
+        false,
+    )
 })
 
 test("games without footage keep one cover-art fallback", () => {
-    const media = getGameMedia(baseGame)
+    const media = getGameMedia(noMediaGame)
     assert.equal(media.length, 1)
     assert.equal(media[0].type, "cover")
-    assert.equal(getFeaturedPreview(baseGame), null)
+    assert.equal(getFeaturedPreview(noMediaGame), null)
 })
 
 test("legacy trailer and screenshot fields are folded into normalized media", () => {
     const game = {
-        ...baseGame,
+        ...noMediaGame,
         trailerUrl: "https://media.example.test/trailer.mp4",
         screenshots: ["https://media.example.test/one.jpg"],
     }
@@ -83,7 +116,7 @@ test("featured gameplay is selected and trailers are never substituted", () => {
     const gameplay = getFeaturedPreview(fixtureGame)
     assert.equal(gameplay?.id, "test-gameplay")
     const trailerOnly = {
-        ...baseGame,
+        ...noMediaGame,
         media: [
             {
                 id: "featured-trailer",
@@ -98,7 +131,7 @@ test("featured gameplay is selected and trailers are never substituted", () => {
 
 test("a featured screenshot does not displace real gameplay footage", () => {
     const game = {
-        ...baseGame,
+        ...noMediaGame,
         media: [
             {
                 id: "featured-shot",
@@ -140,7 +173,7 @@ test("game cards render a static cover with no eager video", () => {
 
 test("a game without footage renders no preview overlay", () => {
     const markup = renderToStaticMarkup(
-        React.createElement(GameMediaPreview, { game: baseGame }),
+        React.createElement(GameMediaPreview, { game: noMediaGame }),
     )
     assert.equal(markup, "")
 })
@@ -217,7 +250,7 @@ test("Discover cards retain navigation and do not block it with the preview", ()
     assert.match(mediaCss, /\.game-media-preview \{[\s\S]*?pointer-events: none/)
 })
 
-test("product gallery renders video controls for gameplay media", () => {
+test("product gallery renders video controls for video media", () => {
     const markup = renderToStaticMarkup(
         React.createElement(GameMediaGallery, { game: fixtureGame }),
     )
@@ -232,9 +265,31 @@ test("product gallery renders video controls for gameplay media", () => {
     assert.match(markup, /aria-label="Previous media item"/)
 })
 
+test("product gallery only offers Trailers and Screenshots filters", () => {
+    const markup = renderToStaticMarkup(
+        React.createElement(GameMediaGallery, { game: baseGame }),
+    )
+    assert.match(markup, />Trailers</)
+    assert.match(markup, />Screenshots</)
+    assert.doesNotMatch(markup, />Gameplay</)
+    assert.doesNotMatch(markup, /gameplay/i)
+})
+
+test("image swaps keep the previous picture visible until the next one is ready", () => {
+    const gallerySource = source("../src/features/media/GameMediaGallery.tsx")
+    assert.match(gallerySource, /new window\.Image\(\)/)
+    assert.match(gallerySource, /setDisplayedImageUrl\(selectedImageUrl\)/)
+    assert.match(gallerySource, /src=\{displayedImageUrl \?\? selected\.url\}/)
+    assert.match(
+        gallerySource,
+        /selectedImageUrl \?\? steam\(game\.steamAppId \|\| game\.id\)/,
+    )
+    assert.doesNotMatch(gallerySource, /<img\s+key=\{selected\.id\}/)
+})
+
 test("product gallery renders screenshots as images with a larger view", () => {
     const game = {
-        ...baseGame,
+        ...noMediaGame,
         media: [
             {
                 id: "shot",
@@ -255,11 +310,11 @@ test("product gallery renders screenshots as images with a larger view", () => {
 
 test("product gallery has a graceful no-footage state", () => {
     const markup = renderToStaticMarkup(
-        React.createElement(GameMediaGallery, { game: baseGame }),
+        React.createElement(GameMediaGallery, { game: noMediaGame }),
     )
     assert.match(
         markup,
-        /No gameplay footage or screenshots are available yet\. Cover artwork is shown instead\./,
+        /No trailers or screenshots are available yet\. Cover artwork is shown instead\./,
     )
     assert.match(markup, /media-thumb/)
 })

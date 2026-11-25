@@ -181,30 +181,39 @@ test('shared cards, Compare, and Profile keep checkout entry points contextual',
     assert.match(profiles, /GiftHistory/)
 })
 
-test('order review uses canonical catalog metadata and labels prices as samples', () => {
+test('compact review uses canonical catalog metadata without price overload', () => {
     const celeste = 504230
-    const html = renderDialog({ game: getGameById(celeste) })
     const game = getGameById(celeste)
+    const html = renderDialog({ game })
+    const transaction = createTransaction({ session: { gameId: celeste } })
+    const receipt = renderDialog({ game, step: 'complete', completed: transaction })
 
     assert.match(html, /aria-label="PLAYSCAPE prototype checkout"/)
     assert.match(html, new RegExp(game.title))
     assert.match(html, /Maddy Makes Games/)
     assert.match(html, /Matt Makes Games/)
-    assert.match(html, /\$14\.99 USD \(sample catalog price\)/)
-    assert.match(html, /Simulated subtotal/)
-    assert.match(html, /Simulated total/)
-    assert.match(html, /not a live storefront price/)
+    assert.doesNotMatch(html, /Simulated subtotal/)
+    assert.doesNotMatch(html, /Simulated total/)
+    assert.doesNotMatch(html, /sample catalog price/)
+    assert.doesNotMatch(html, /Prices are shown on the receipt/)
     assert.match(html, new RegExp(CHECKOUT_DISCLAIMER.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')))
+    assert.match(receipt, /\$14\.99 USD \(sample catalog price\)/)
 })
 
-test('missing or invalid prices stay unavailable instead of inventing a price', () => {
+test('missing or invalid prices stay unavailable on the receipt', () => {
     const game = { ...getGameById(STARDEW), price: Number.NaN }
     const summary = buildCheckoutSummary(game)
     assert.equal(summary.price, null)
     assert.equal(summary.total, null)
     assert.equal(summary.priceLabel, 'Price unavailable in prototype')
+    assert.doesNotMatch(renderDialog({ game }), /Price unavailable in prototype/)
+    const result = createPrototypeTransaction(
+        checkoutSession({ gameId: STARDEW }),
+        { games: [game], id: 'txn-no-price', now: NOW },
+    )
+    assert.equal(result.ok, true)
     assert.match(
-        renderDialog({ game }),
+        renderDialog({ game, step: 'complete', completed: result.transaction }),
         /Price unavailable in prototype/g,
     )
     assert.equal(formatPrototypePrice(null), 'Price unavailable in prototype')
@@ -221,10 +230,11 @@ test('purchase type can be switched between personal purchase and gift', () => {
     const personal = renderDialog()
     assert.match(personal, /Purchase for Myself/)
     assert.match(personal, /Gift to a Friend/)
-    assert.match(personal, /Personal purchase selected/)
+    assert.doesNotMatch(personal, /Personal purchase selected/)
 
     const gift = renderDialog({ purchaseType: 'gift' })
-    assert.match(gift, /Gift flow selected/)
+    assert.match(gift, /class="chk-choice-button selected" aria-pressed="true">Gift to a Friend/)
+    assert.match(gift, /aria-label="Gift message"/)
 })
 
 test('gift details only expose searchable existing friends', () => {
@@ -242,27 +252,45 @@ test('gift messages and immediate delivery are explicit without scheduling compl
     const html = renderDialog({ purchaseType: 'gift', step: 'details' })
     assert.match(html, /aria-label="Gift message"/)
     assert.match(html, /0\/500 characters/)
-    assert.match(html, /Immediate/)
-    assert.match(html, /No email, notification, or external delivery occurs/)
+    assert.match(html, /Choose a friend/)
+    assert.match(html, /Immediate, prototype only\. No email or delivery\./)
     assert.doesNotMatch(html, /Schedule/)
 })
 
-test('simulated payment is illustrative and collects no credentials', () => {
-    const html = renderDialog({ step: 'payment' })
-    assert.match(html, /Credit\/Debit Card/)
-    assert.match(html, /Digital Wallet/)
-    assert.match(html, /Prototype Payment/)
-    assert.match(html, /No card fields are collected or stored/)
+test('review has no payment chooser and the fake screen collects no real credentials', () => {
+    const html = renderDialog()
+    const payment = renderDialog({ step: 'payment' })
+    const source = readFileSync(
+        path.join(srcRoot, 'features/checkout/CheckoutDialog.tsx'),
+        'utf8',
+    )
+    assert.doesNotMatch(html, /Credit\/Debit Card/)
+    assert.doesNotMatch(html, /Digital Wallet/)
+    assert.doesNotMatch(html, /Simulated payment method/)
+    assert.doesNotMatch(html, /Payment is fixed to a local prototype record/)
+    assert.doesNotMatch(source, /PAYMENT_METHODS/)
+    assert.match(source, /paymentMethod: "prototype"/)
     assert.doesNotMatch(html, /<input[^>]*type="(?:number|text|password)"/i)
-    assert.doesNotMatch(html, /name="(?:card|cvv|billing)/i)
+    assert.doesNotMatch(payment, /name="(?:card|cvv|billing)/i)
+    assert.doesNotMatch(payment, /type="password"/)
+    assert.doesNotMatch(source, /localStorage/)
+    assert.doesNotMatch(source, /fetch\(/)
+    assert.match(payment, /Fake number/)
+    assert.match(payment, /Nothing is saved, sent, or used for a real payment\./)
 })
 
-test('final confirmation requires an explicit prototype acknowledgement', () => {
-    const html = renderDialog({ step: 'confirm' })
-    assert.match(html, /Final confirmation/)
-    assert.match(html, /I understand this is a prototype and no real transaction will occur/)
-    assert.match(html, /disabled=""/)
-    assert.match(html, /Confirm simulated purchase/)
+test('review advances to fake payment without an acknowledgement checkbox', () => {
+    const html = renderDialog()
+    const payment = renderDialog({ step: 'payment' })
+    assert.doesNotMatch(html, /Final confirmation/)
+    assert.doesNotMatch(html, /I understand this is a prototype and no real transaction will occur/)
+    assert.doesNotMatch(html, /type="checkbox"/)
+    assert.doesNotMatch(html, /disabled=""/)
+    assert.match(html, /Continue to payment/)
+    assert.doesNotMatch(html, /Create prototype record/)
+    assert.match(payment, /Create prototype record/)
+    assert.match(payment, /Back<\/button>/)
+    assert.doesNotMatch(html, /Review final order/)
 })
 
 test('personal checkout creates a simulated purchase and local library overlay', () => {
@@ -337,7 +365,10 @@ test('gift confirmation shows sender, recipient, message, date, and reference', 
     assert.match(html, /For our next rainy day/)
     assert.match(html, /Nov 24, 2026/)
     assert.match(html, /PS-txn-confirm/)
-    assert.match(html, /No payment, license, email, or external delivery occurred/)
+    assert.match(html, /Prototype gift/)
+    assert.doesNotMatch(html, /Simulated gift records were created/)
+    assert.doesNotMatch(html, /No payment, license, email, or external delivery occurred/)
+    assert.doesNotMatch(html, /Simulated purchase records were created/)
 })
 
 test('duplicate ledger records and duplicate submissions are rejected', () => {
@@ -538,6 +569,8 @@ test('checkout feature modules rely on the shared storage owner', () => {
         'features/checkout/model.ts',
         'features/checkout/storage.ts',
         'features/checkout/useCheckout.ts',
+        'features/checkout/cart.ts',
+        'features/checkout/useCart.ts',
         'features/checkout/CheckoutDialog.tsx',
         'features/checkout/GiftHistory.tsx',
     ]
@@ -556,13 +589,15 @@ test('checkout feature modules rely on the shared storage owner', () => {
 })
 
 test('checkout UI stays accessible and responsive', () => {
-    const html = renderDialog({ step: 'confirm' })
+    const html = renderDialog()
+    const giftHtml = renderDialog({ purchaseType: 'gift' })
     assert.match(html, /role="dialog"/)
     assert.match(html, /aria-modal="true"/)
-    assert.match(html, /aria-current="step"/)
-    assert.match(html, /type="checkbox"/)
+    assert.doesNotMatch(html, /aria-current="step"/)
+    assert.doesNotMatch(html, /type="checkbox"/)
     assert.match(html, /role="note"/)
-    assert.match(html, /role="status"/)
+    assert.match(html, /role="group" aria-label="Purchase type"/)
+    assert.match(giftHtml, /role="status"/)
     assert.match(html, /aria-busy="false"/)
 
     const dialog = readFileSync(

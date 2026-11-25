@@ -48,6 +48,7 @@ import {
     type CheckoutSession,
     type GiftDecision,
     type PurchaseType,
+    useCart,
 } from "./features/checkout"
 import { GameMediaPreview } from "./features/media"
 
@@ -794,9 +795,10 @@ export default function Playscape({
         [auto, setAuto] = React.useState(appHydration.auto),
         [menu, setMenu] = React.useState(false),
         [notice, setNotice] = React.useState(""),
-        [checkoutId, setCheckoutId] = React.useState<number | null>(null),
+        [checkoutIds, setCheckoutIds] = React.useState<number[]>([]),
         [checkoutSessionId, setCheckoutSessionId] = React.useState<string | null>(null),
-        [checkoutType, setCheckoutType] = React.useState<PurchaseType>("personal")
+        [checkoutType, setCheckoutType] = React.useState<PurchaseType>("personal"),
+        [checkoutFromCart, setCheckoutFromCart] = React.useState(false)
     const [view, setView] = React.useState(initialView)
     const [profileId, setProfileId] = React.useState(
         socialPeople.find((p) => p.name === initialPlayer)?.id || "you"
@@ -932,12 +934,44 @@ export default function Playscape({
         }
         setDetail(null)
         setCheckoutType(type)
+        setCheckoutFromCart(false)
         setCheckoutSessionId(createSessionId())
-        setCheckoutId(resolved.id)
+        setCheckoutIds([resolved.id])
+    }
+    function openCartCheckout() {
+        if (!cart.gameIds.length) {
+            setNotice("Your prototype cart is empty. Add a game from its details or checkout screen.")
+            return
+        }
+        setDetail(null)
+        setCheckoutType("personal")
+        setCheckoutFromCart(true)
+        setCheckoutSessionId(createSessionId())
+        setCheckoutIds(cart.gameIds)
     }
     function closeCheckout() {
-        setCheckoutId(null)
+        setCheckoutIds([])
         setCheckoutSessionId(null)
+        setCheckoutFromCart(false)
+    }
+    function addToCart(id: number) {
+        if (cart.gameIds.includes(id)) {
+            setNotice("This game is already in your prototype cart.")
+            return
+        }
+        cart.add(id)
+        setNotice("Added to your prototype cart. No purchase was made.")
+    }
+    function removeFromCart(id: number) {
+        const next = cart.gameIds.filter((entry) => entry !== id)
+        cart.remove(id)
+        setCheckoutIds(next)
+        if (!next.length) closeCheckout()
+    }
+    function clearCartItems() {
+        cart.clear()
+        closeCheckout()
+        setNotice("Prototype cart cleared.")
     }
     function completeCheckout(session: CheckoutSession) {
         const result = checkoutState.completeCheckout(session)
@@ -945,6 +979,7 @@ export default function Playscape({
             setNotice(result.errors[0] || "This simulated checkout could not be completed.")
             return result
         }
+        if (checkoutFromCart) cart.clear()
         setNotice(
             session.purchaseType === "gift"
                 ? "Prototype gift sent. No payment, delivery, or notification occurred."
@@ -991,6 +1026,7 @@ export default function Playscape({
     )
     const reviewState = useReviews({ games: data, savedIds: saved })
     const checkoutState = useCheckout({ games: data })
+    const cart = useCart({ games: data })
     function find() {
         changeView("Discover")
         setActive(true)
@@ -1487,7 +1523,7 @@ export default function Playscape({
  .ps {
    font-family:'DM Sans',Arial,sans-serif !important;
    --bg:#0b1019; --surface:#121b29; --surface-2:#192536; --surface-3:#202d40;
-   --text:#edf1f7; --muted:#9aa8bb; --line:#29374a; --radius:12px; --favorite:#d56a67;
+   --text:#edf1f7; --muted:#9aa8bb; --line:#29374a; --radius:12px; --favorite:#e53955;
    background:#0b1019 !important;
    background-image:none !important;
    line-height:1.55;
@@ -2199,6 +2235,8 @@ export default function Playscape({
                     currentView={view}
                     atmosphere={atmos}
                     wishlistCount={saved.length}
+                    cartCount={cart.gameIds.length}
+                    onOpenCart={openCartCheckout}
                     menuOpen={menu}
                     query={query}
                     onNavigate={(destination: NavigationDestination) => nav(destination)}
@@ -2504,10 +2542,12 @@ export default function Playscape({
                         social.dialog ? JSON.stringify(social.dialog) : "closed"
                     }
                 />
-                {checkoutId !== null && checkoutSessionId && (
+                {checkoutIds.length > 0 && checkoutSessionId && (
                     <CheckoutDialog
                         key={checkoutSessionId}
-                        game={resolveGameRecord(checkoutId, data)!}
+                        games={checkoutIds
+                            .map((id) => resolveGameRecord(id, data))
+                            .filter((entry): entry is GameRecord => Boolean(entry))}
                         sessionId={checkoutSessionId}
                         initialPurchaseType={checkoutType}
                         friends={socialPeople}
@@ -2515,6 +2555,10 @@ export default function Playscape({
                         renderAvatar={({ id, size = 38 }) => (
                             <Avatar id={id} size={size} />
                         )}
+                        cartMode={checkoutFromCart}
+                        onAddToCart={addToCart}
+                        onRemoveFromCart={removeFromCart}
+                        onClearCart={clearCartItems}
                         onClose={closeCheckout}
                         onComplete={completeCheckout}
                         onViewProfile={(id) => {

@@ -16,7 +16,8 @@ export type PurchaseType = "personal" | "gift"
 export type PaymentMethodType = "card" | "wallet" | "prototype"
 export type GiftStatus = "received" | "accepted" | "declined"
 export type TransactionStatus = "simulated-complete"
-export type CheckoutStep = "review" | "details" | "payment" | "confirm" | "complete"
+/** Review, fake payment details, then receipt. */
+export type CheckoutStep = "review" | "payment" | "complete"
 export type GiftDecision = Extract<GiftStatus, "accepted" | "declined">
 
 export type CheckoutSession = {

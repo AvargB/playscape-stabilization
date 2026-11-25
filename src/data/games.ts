@@ -10,6 +10,8 @@
  * verified/replaced before this catalog is presented as a live store.
  */
 
+import { verifiedGameMedia } from "./gameMedia"
+
 /**
  * Optional presentation media. URLs are never invented by the prototype;
  * records without verified footage simply fall back to cover artwork.
@@ -618,6 +620,7 @@ const normalizeGame = (game: (typeof gameSeeds)[number]): GameRecord => ({
     sessionMinutes: game.session,
     steamAppId: game.id,
     metadataStatus: (game.metadataStatus ?? "prototype") as GameRecord["metadataStatus"],
+    media: verifiedGameMedia[game.id],
 })
 
 export const defaultGames: GameRecord[] = gameSeeds.map(normalizeGame)

@@ -4,11 +4,10 @@ import { Icon } from "../../components/Icon"
 import { steam, type GameMedia, type GameRecord } from "../../data/games"
 import { filterMedia, getGameMedia, getMediaLabel, isVideoMedia } from "./model"
 
-type GalleryFilter = "all" | "gameplay" | "trailer" | "screenshot"
+type GalleryFilter = "all" | "trailer" | "screenshot"
 
 const FILTERS: { id: GalleryFilter; label: string }[] = [
     { id: "all", label: "All" },
-    { id: "gameplay", label: "Gameplay" },
     { id: "trailer", label: "Trailers" },
     { id: "screenshot", label: "Screenshots" },
 ]
@@ -36,6 +35,10 @@ export default function GameMediaGallery({ game }: GameMediaGalleryProps) {
     const [selectedId, setSelectedId] = React.useState<string | null>(null)
     const selected =
         visible.find((item) => item.id === selectedId) ?? visible[0] ?? null
+    const selectedImageUrl = selected && !isVideoMedia(selected) ? selected.url : null
+    const [displayedImageUrl, setDisplayedImageUrl] = React.useState<string | null>(
+        selectedImageUrl ?? steam(game.steamAppId || game.id),
+    )
 
     const [loading, setLoading] = React.useState(true)
     const [error, setError] = React.useState(false)
@@ -55,6 +58,31 @@ export default function GameMediaGallery({ game }: GameMediaGalleryProps) {
         setPlaying(false)
         setDuration(selected?.duration ?? "")
     }, [selected?.id, selected?.duration])
+
+    React.useEffect(() => {
+        if (!selectedImageUrl || typeof window === "undefined") return
+        if (selectedImageUrl === displayedImageUrl) {
+            setLoading(false)
+            return
+        }
+        let cancelled = false
+        const image = new window.Image()
+        setLoading(true)
+        image.onload = () => {
+            if (cancelled) return
+            setDisplayedImageUrl(selectedImageUrl)
+            setLoading(false)
+        }
+        image.onerror = () => {
+            if (cancelled) return
+            setLoading(false)
+            setError(true)
+        }
+        image.src = selectedImageUrl
+        return () => {
+            cancelled = true
+        }
+    }, [selectedImageUrl, displayedImageUrl])
 
     React.useEffect(() => {
         if (typeof document === "undefined") return
@@ -148,8 +176,8 @@ export default function GameMediaGallery({ game }: GameMediaGalleryProps) {
                     <h3>Media gallery</h3>
                     <p>
                         {hasOptionalMedia
-                            ? "Gameplay, trailers, and artwork from the central catalog."
-                            : "No gameplay footage or screenshots are available yet. Cover artwork is shown instead."}
+                            ? "Trailers and artwork from the central catalog."
+                            : "No trailers or screenshots are available yet. Cover artwork is shown instead."}
                     </p>
                 </div>
                 {selected && (
@@ -266,8 +294,7 @@ export default function GameMediaGallery({ game }: GameMediaGalleryProps) {
                         ) : selected ? (
                             <div className="media-image-shell">
                                 <img
-                                    key={selected.id}
-                                    src={selected.url}
+                                    src={displayedImageUrl ?? selected.url}
                                     alt={
                                         selected.description ||
                                         selected.title ||

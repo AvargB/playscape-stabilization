@@ -58,6 +58,13 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
         spark: <circle cx="12" cy="12" r="9" strokeWidth="3" />,
         check: <path d="m5 12 4 4L19 6" />,
         menu: <path d="M4 6h16M4 12h16M4 18h16" />,
+        cart: (
+            <>
+                <path d="M3 4h2l2.2 10.4a2 2 0 0 0 2 1.6h7.6a2 2 0 0 0 2-1.6L21 7H6" />
+                <circle cx="10" cy="20" r="1.2" />
+                <circle cx="18" cy="20" r="1.2" />
+            </>
+        ),
         play: <path d="m8 4 12 8-12 8Z" />,
         pause: <path d="M8 5v14M16 5v14" strokeWidth="3" />,
         volume: (
