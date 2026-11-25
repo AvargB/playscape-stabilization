@@ -109,10 +109,10 @@ test("legacy trailer and screenshot fields are folded into normalized media", ()
         media.map((item) => item.type),
         ["trailer", "screenshot", "cover"],
     )
-    assert.equal(getFeaturedPreview(game), null)
+    assert.equal(getFeaturedPreview(game)?.id, `${game.id}-trailer-legacy`)
 })
 
-test("featured gameplay is selected and trailers are never substituted", () => {
+test("gameplay stays preferred and trailers are used when it is absent", () => {
     const gameplay = getFeaturedPreview(fixtureGame)
     assert.equal(gameplay?.id, "test-gameplay")
     const trailerOnly = {
@@ -126,7 +126,8 @@ test("featured gameplay is selected and trailers are never substituted", () => {
             },
         ],
     }
-    assert.equal(getFeaturedPreview(trailerOnly), null)
+    assert.equal(getFeaturedPreview(trailerOnly)?.id, "featured-trailer")
+    assert.equal(getFeaturedPreview(baseGame)?.type, "trailer")
 })
 
 test("a featured screenshot does not displace real gameplay footage", () => {
@@ -178,12 +179,36 @@ test("a game without footage renders no preview overlay", () => {
     assert.equal(markup, "")
 })
 
+test("catalog trailers are labeled as trailers on card previews", () => {
+    const markup = renderToStaticMarkup(
+        React.createElement(GameMediaPreview, { game: baseGame }),
+    )
+    assert.match(markup, /game-media-preview-toggle/)
+    assert.match(markup, /Play trailer preview for Stardew Valley/)
+    assert.doesNotMatch(markup, /Play gameplay preview/)
+    assert.doesNotMatch(markup, /<video/)
+})
+
+test("store and discovery cards share the hover preview component", () => {
+    const discoverSource = source("../src/features/discover/index.tsx")
+    const appSource = source("../src/PLAYSCAPE-cleaner.tsx")
+    const browseSource = source("../src/features/browse/index.tsx")
+    assert.match(discoverSource, /<GameMediaPreview game=\{g\} \/>/)
+    assert.match(appSource, /<GameMediaPreview game=\{g\} \/>/)
+    assert.match(appSource, /renderCard=\{card\}/)
+    assert.match(browseSource, /browseResults\.map\(renderCard\)/)
+})
+
 test("card preview waits before activating and stops on pointer exit", () => {
     const previewSource = source("../src/features/media/GameMediaPreview.tsx")
     assert.match(previewSource, /window\.setTimeout\(activate, 500\)/)
     assert.match(previewSource, /onPointerLeave=\{stop\}/)
     assert.match(previewSource, /pointerType === "touch"/)
     assert.match(previewSource, /matchMedia\("\(prefers-reduced-motion: reduce\)"\)/)
+    assert.match(previewSource, /closest<HTMLElement>\("\.game-art"\)/)
+    assert.match(previewSource, /art\.addEventListener\("pointerenter"/)
+    assert.match(previewSource, /art\.addEventListener\("pointerleave"/)
+    assert.match(previewSource, /art\.addEventListener\("focusin"/)
 })
 
 test("card preview is muted, poster-backed, and does not load eagerly", () => {

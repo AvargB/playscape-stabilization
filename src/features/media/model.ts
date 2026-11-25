@@ -105,8 +105,9 @@ export function isVideoMedia(item: GameMedia): boolean {
 }
 
 /**
- * Selects the featured item for compact previews. Trailers are never chosen
- * as a substitute for gameplay, and a featured item must be a valid video.
+ * Selects a video for compact card previews. Real gameplay still wins when it
+ * exists; otherwise a trailer is used, since the catalog intentionally ships
+ * trailers and screenshots only. A featured item must be a valid video.
  */
 export function getFeaturedPreview(
     game: GameRecord | null | undefined,
@@ -116,6 +117,8 @@ export function getFeaturedPreview(
     return (
         videos.find((item) => item.featured && item.type === "gameplay") ??
         videos.find((item) => item.type === "gameplay") ??
+        videos.find((item) => item.featured && item.type === "trailer") ??
+        videos.find((item) => item.type === "trailer") ??
         null
     )
 }

@@ -18,12 +18,14 @@ export interface GameMediaPreviewProps {
 }
 
 /**
- * Compact, delayed, muted gameplay preview overlay for game cards.
+ * Compact, delayed, muted video preview overlay for game cards.
  * It never replaces the static cover markup and does not load a video until a
- * deliberate hover/focus or explicit button press activates it.
+ * deliberate hover/focus or explicit button press activates it. Playable
+ * trailers are used when the catalog has no gameplay footage.
  */
 export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
     const media = React.useMemo(() => getFeaturedPreview(game), [game])
+    const previewKind = media?.type === "trailer" ? "trailer" : "gameplay"
     const tokenRef = React.useRef<symbol>(Symbol("game-media-preview"))
     const wrapRef = React.useRef<HTMLSpanElement>(null)
     const videoRef = React.useRef<HTMLVideoElement>(null)
@@ -103,6 +105,28 @@ export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
     }, [stop])
 
     React.useEffect(() => {
+        const art = wrapRef.current?.closest<HTMLElement>(".game-art")
+        if (!art) return
+        const onArtPointerEnter = (event: PointerEvent) => schedule(event.pointerType)
+        const onArtFocusIn = () => schedule()
+        const onArtFocusOut = (event: FocusEvent) => {
+            const next = event.relatedTarget as Node | null
+            if (next && art.contains(next)) return
+            stop()
+        }
+        art.addEventListener("pointerenter", onArtPointerEnter)
+        art.addEventListener("pointerleave", stop)
+        art.addEventListener("focusin", onArtFocusIn)
+        art.addEventListener("focusout", onArtFocusOut)
+        return () => {
+            art.removeEventListener("pointerenter", onArtPointerEnter)
+            art.removeEventListener("pointerleave", stop)
+            art.removeEventListener("focusin", onArtFocusIn)
+            art.removeEventListener("focusout", onArtFocusOut)
+        }
+    }, [schedule, stop])
+
+    React.useEffect(() => {
         if (!active) return
         const video = videoRef.current
         if (!video) return
@@ -148,7 +172,7 @@ export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
                     className="game-media-preview-video"
                     src={media.url}
                     poster={media.thumbnail || steam(game.steamAppId || game.id)}
-                    aria-label={media.title || `${game.title} gameplay preview`}
+                    aria-label={media.title || `${game.title} ${previewKind} preview`}
                     muted
                     loop
                     playsInline
@@ -169,8 +193,8 @@ export default function GameMediaPreview({ game }: GameMediaPreviewProps) {
                 className="game-media-preview-toggle"
                 aria-label={
                     active
-                        ? `Stop gameplay preview for ${game.title}`
-                        : `Play gameplay preview for ${game.title}`
+                        ? `Stop ${previewKind} preview for ${game.title}`
+                        : `Play ${previewKind} preview for ${game.title}`
                 }
                 aria-pressed={active}
                 onClick={(event) => {
