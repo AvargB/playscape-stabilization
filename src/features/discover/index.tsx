@@ -18,6 +18,7 @@ import {
     type ReviewDiscoveryFilter,
     type ReviewRecord,
 } from "../reviews"
+import { GameMediaPreview } from "../media"
 
 export type Season = {
     name: string
@@ -283,6 +284,7 @@ function Discover({
                         <Icon name="arrow" /> Explore game
                     </span>
                 </button>
+                <GameMediaPreview game={g} />
                 <button
                     className={"save " + (saved.includes(g.id) ? "saved" : "")}
                     aria-label={

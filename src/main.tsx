@@ -5,6 +5,7 @@ import "./index.css"
 import "./features/compare/compare.css"
 import "./features/reviews/reviews.css"
 import "./features/checkout/checkout.css"
+import "./features/media/media.css"
 
 const root = createRoot(document.getElementById("root")!)
 root.render(

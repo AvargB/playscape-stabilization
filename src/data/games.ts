@@ -10,6 +10,29 @@
  * verified/replaced before this catalog is presented as a live store.
  */
 
+/**
+ * Optional presentation media. URLs are never invented by the prototype;
+ * records without verified footage simply fall back to cover artwork.
+ */
+export type GameMediaType =
+    | "gameplay"
+    | "trailer"
+    | "screenshot"
+    | "cover"
+    | "promotional"
+
+export type GameMedia = {
+    id: string
+    type: GameMediaType
+    url: string
+    thumbnail?: string
+    title?: string
+    description?: string
+    source?: string
+    duration?: string
+    featured?: boolean
+}
+
 export type GameRecord = {
     /** Stable internal key; currently aligned to the Steam app ID for seed data. */
     id: number
@@ -39,6 +62,8 @@ export type GameRecord = {
     officialWebsite?: string
     trailerUrl?: string
     screenshots?: string[]
+    /** Optional centralized media gallery entries; see GameMedia above. */
+    media?: GameMedia[]
     estimatedMainStoryHours?: number
     estimatedCompletionistHours?: number
     reviewScore?: number

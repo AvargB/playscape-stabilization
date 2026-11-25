@@ -59,6 +59,23 @@ export function Icon({ name, size = 18 }: { name: string; size?: number }) {
         check: <path d="m5 12 4 4L19 6" />,
         menu: <path d="M4 6h16M4 12h16M4 18h16" />,
         play: <path d="m8 4 12 8-12 8Z" />,
+        pause: <path d="M8 5v14M16 5v14" strokeWidth="3" />,
+        volume: (
+            <>
+                <path d="M4 9v6h4l5 4V5L8 9H4Z" />
+                <path d="M16 9a4 4 0 0 1 0 6M19 6a8 8 0 0 1 0 12" />
+            </>
+        ),
+        expand: <path d="M8 3H3v5M16 3h5v5M8 21H3v-5M16 21h5v-5" />,
+        image: (
+            <>
+                <rect x="3" y="4" width="18" height="16" rx="3" />
+                <circle cx="9" cy="10" r="2" />
+                <path d="m4 18 5-5 4 4 3-3 4 4" />
+            </>
+        ),
+        "chevron-left": <path d="m15 5-7 7 7 7" />,
+        "chevron-right": <path d="m9 5 7 7-7 7" />,
         user: (
             <>
                 <circle cx="12" cy="8" r="4" />

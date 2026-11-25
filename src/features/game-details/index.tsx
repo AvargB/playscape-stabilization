@@ -24,6 +24,7 @@ import {
     type ReviewRecordResult,
 } from "../reviews"
 import type { PurchaseType } from "../checkout/types"
+import { GameMediaGallery } from "../media"
 
 export interface GameDetailsProps {
     games: GameRecord[]
@@ -246,6 +247,7 @@ export default function GameDetails({
                         src={steam(detailGame.id)}
                         alt={detailGame.title + " artwork"}
                     />
+                    <GameMediaGallery game={detailGame} />
                     <div className="detail-meta">
                         <span className="pill">{detailGame.genre}</span>
                         <span className="pill">{detailGame.players}</span>

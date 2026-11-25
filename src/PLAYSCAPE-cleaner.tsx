@@ -49,6 +49,7 @@ import {
     type GiftDecision,
     type PurchaseType,
 } from "./features/checkout"
+import { GameMediaPreview } from "./features/media"
 
 const steam = (id: number) =>
     "https://cdn.akamai.steamstatic.com/steam/apps/" + id + "/header.jpg"
@@ -1023,6 +1024,7 @@ export default function Playscape({
                         <Icon name="arrow" /> Explore game
                     </span>
                 </button>
+                <GameMediaPreview game={g} />
                 <button
                     className={"save " + (saved.includes(g.id) ? "saved" : "")}
                     aria-label={
