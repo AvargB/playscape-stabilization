@@ -11,6 +11,11 @@ import TheWeb, {
 } from '../src/features/the-web/index.tsx'
 import { gameCatalog } from '../src/data/games.ts'
 import {
+    createPrototypeTransaction,
+    getOwnedGameIdsByPerson,
+    respondToGift,
+} from '../src/features/checkout/index.ts'
+import {
     buildSocialGraph,
     createEmptySocialState,
     directFriendIds,
@@ -18,7 +23,7 @@ import {
     socialPeople,
 } from '../src/socialData.ts'
 
-function renderWeb(state, focus = 'casey') {
+function renderWeb(state, focus = 'casey', ownedIdsByPerson = undefined) {
     return renderToStaticMarkup(
         React.createElement(TheWeb, {
             games: gameCatalog,
@@ -32,6 +37,7 @@ function renderWeb(state, focus = 'casey') {
                 setDialog() {},
                 graph: buildSocialGraph({ circles: state.circles }),
                 state,
+                ownedIdsByPerson,
             },
         }),
     )
@@ -122,6 +128,76 @@ test('The Web does not show a transaction activity blurb', () => {
     assert.doesNotMatch(source, /prototypeActivity/)
     assert.doesNotMatch(source, /webgraph-activity/)
     assert.match(html, /Drag to pan/)
+})
+
+test('accepted gifts create owned Web connections and only owned/wishlist lines are highlighted', () => {
+    const gift = createPrototypeTransaction(
+        {
+            id: 'web-gift',
+            gameId: 383870,
+            purchaseType: 'gift',
+            recipientId: 'jamie',
+            giftMessage: '',
+            paymentMethod: 'prototype',
+        },
+        { id: 'txn-web-gift', now: '2026-11-24T12:00:00.000Z' },
+    )
+    assert.equal(gift.ok, true)
+    const accepted = respondToGift(gift.transaction, 'accepted')
+    assert.equal(accepted.ok, true)
+    const ownedIdsByPerson = getOwnedGameIdsByPerson({
+        transactions: [accepted.transaction],
+        ownedGameIds: [],
+    })
+
+    const model = buildWebGraphModel(buildSocialGraph(), ownedIdsByPerson, gameCatalog)
+    assert.ok(model.games.some((node) => node.id === '383870'))
+    assert.ok(
+        model.edges.some(
+            (edge) => edge.person === 'jamie' && edge.game === '383870' && edge.kind === 'owned',
+        ),
+    )
+    assert.equal(
+        model.edges.some(
+            (edge) =>
+                edge.person === 'jamie' &&
+                edge.game === '383870' &&
+                (edge.kind === 'wishlist' || edge.kind === 'shared'),
+        ),
+        false,
+    )
+
+    const sparseGraph = {
+        nodes: buildSocialGraph().nodes.filter((node) => node.type !== 'Game'),
+        relationships: [],
+    }
+    const sparseModel = buildWebGraphModel(sparseGraph, { jamie: [383870] }, gameCatalog)
+    assert.ok(sparseModel.games.some((node) => node.id === '383870'))
+    assert.ok(sparseModel.edges.some((edge) => edge.person === 'jamie' && edge.kind === 'owned'))
+
+    const html = decodeHtml(renderWeb(createEmptySocialState(), 'jamie', ownedIdsByPerson))
+    const lines = Array.from(
+        html.matchAll(/<line[^>]*data-web-edge-kind="([^"]+)"[^>]*stroke="([^"]+)"/g),
+        (match) => ({ kind: match[1], stroke: match[2] }),
+    )
+    assert.ok(lines.length > 0)
+    for (const line of lines) {
+        const expected = line.kind === 'owned'
+            ? '#8EDCC0'
+            : ['wishlist', 'shared'].includes(line.kind)
+                ? '#A99BCB'
+                : '#566174'
+        assert.equal(line.stroke, expected)
+    }
+    assert.ok(lines.some((line) => line.kind === 'owned' && line.stroke === '#8EDCC0'))
+    assert.ok(lines.some((line) => line.stroke === '#A99BCB'))
+
+    const dotFills = Array.from(
+        html.matchAll(/<circle class="webgraph-dot"[^>]*fill="([^"]+)"/g),
+        (match) => match[1],
+    )
+    assert.ok(dotFills.length > 0)
+    assert.deepEqual([...new Set(dotFills)], ['#C9D3E2'])
 })
 
 test('person similarity uses Jaccard overlap and layout is deterministic', () => {

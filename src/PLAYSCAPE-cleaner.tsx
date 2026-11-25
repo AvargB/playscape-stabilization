@@ -1093,6 +1093,7 @@ export default function Playscape({
         () => checkoutState.getOwnedGameIdsByPerson(),
         [checkoutState.state],
     )
+    const profileOwnedIds = ownedIdsByPerson[profileId] ?? ownedIds
     React.useEffect(() => {
         const stale = cart.items.filter((item) => ownedSet.has(item.gameId))
         if (!stale.length) return
@@ -2059,17 +2060,17 @@ export default function Playscape({
   transition:stroke-width .18s ease,filter .18s ease;
 }
 .ps .webgraph-node.person .webgraph-dot {
-  filter:drop-shadow(0 0 5px #8edcc055);
+  filter:drop-shadow(0 0 5px #c9d3e255);
 }
 .ps .webgraph-node.active .webgraph-dot,
 .ps .webgraph-node:hover .webgraph-dot,
 .ps .webgraph-node:focus-visible .webgraph-dot {
   stroke:#e7eaf0;
   stroke-width:1.8px;
-  filter:drop-shadow(0 0 8px #8edcc088);
+  filter:drop-shadow(0 0 8px #c9d3e288);
 }
 .ps .webgraph-halo {
-  fill:#8edcc0;
+  fill:#c9d3e2;
   opacity:.07;
   transition:opacity .18s ease;
 }
@@ -2169,6 +2170,21 @@ export default function Playscape({
   letter-spacing:.04em;
   pointer-events:none;
 }
+.ps .webgraph-legend {
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  margin-left:12px;
+  color:#c9d3e2;
+}
+.ps .webgraph-key {
+  display:inline-block;
+  width:14px;
+  height:2px;
+  border-radius:2px;
+}
+.ps .webgraph-key.owned { background:#8edcc0; }
+.ps .webgraph-key.wishlist { background:#a99bcb; }
 .ps .webgraph-context {
   position:absolute;
   z-index:3;
@@ -2514,7 +2530,7 @@ export default function Playscape({
                                 state: checkoutState.state,
                                 onRespondToGift: respondToGift,
                             }}
-                            ownedIds={ownedIds}
+                            ownedIds={profileOwnedIds}
                             onResetPrototypeData={resetPrototypeData}
                         />
                     )}

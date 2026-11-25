@@ -246,27 +246,33 @@ export default function PlayerProfile({
                         <div>
                             {tab === "Overview" ? (
                                 <>
-                                    {own && (
-                                        <section className="profile-section chk-profile-summary">
-                                            <div className="section-head">
-                                                <h2>Your prototype library</h2>
-                                            </div>
-                                            <p role="status">
-                                                Owned games: {ownedIds.length}. Personal purchases and accepted gifts appear here immediately.
-                                            </p>
-                                            <div className="social-game-grid">
-                                                {ownedIds.map((id) => (
-                                                    <RenderSmallGame key={id} id={id} reason="Owned" />
-                                                ))}
-                                            </div>
-                                            <button
-                                                className="web-secondary"
-                                                onClick={() => setTab(giftsTab)}
-                                            >
-                                                View library & orders <Icon name="arrow" size={14} />
-                                            </button>
-                                        </section>
-                                    )}
+                                    <section className="profile-section chk-profile-summary">
+                                        <div className="section-head">
+                                            <h2>
+                                                {own
+                                                    ? "Your prototype library"
+                                                    : `${p.name}’s prototype library`}
+                                            </h2>
+                                        </div>
+                                        <p role="status">
+                                            Owned games: {ownedIds.length}.{" "}
+                                            {own
+                                                ? "Personal purchases and accepted gifts appear here immediately."
+                                                : "Seeded games and accepted gifts appear here immediately."}
+                                        </p>
+                                        <div className="social-game-grid">
+                                            {ownedIds.map((id) => (
+                                                <RenderSmallGame key={id} id={id} reason="Owned" />
+                                            ))}
+                                        </div>
+                                        <button
+                                            className="web-secondary"
+                                            onClick={() => setTab(giftsTab)}
+                                        >
+                                            {own ? "View library & orders" : "View gifts & library"}{" "}
+                                            <Icon name="arrow" size={14} />
+                                        </button>
+                                    </section>
                                     <section className="profile-section">
                                         <div className="section-head">
                                             <h2>Currently in their world</h2>

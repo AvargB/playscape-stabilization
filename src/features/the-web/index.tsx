@@ -1,7 +1,7 @@
 /** @jsxRuntime classic */
 import * as React from "react"
 import { Icon } from "../../components/Icon"
-import { type GameRecord } from "../../data/games"
+import { gameCatalog, type GameRecord } from "../../data/games"
 import {
     socialPeople,
     type SocialGraph,
@@ -18,7 +18,6 @@ export type WebNode = {
     y: number
     game?: number
     degree: number
-    tone: "mint" | "coral" | "lavender" | "neutral"
 }
 
 export type WebEdge = {
@@ -27,6 +26,19 @@ export type WebEdge = {
     game: string
     label: string
     kind: "playing" | "owned" | "favorite" | "wishlist" | "shared" | "recommendation"
+}
+
+/** One visible neutral dot color; meaning lives in the connecting lines. */
+const WEB_DOT_COLOR = "#C9D3E2"
+const OWNED_LINE_COLOR = "#8EDCC0"
+const WISHLIST_LINE_COLOR = "#A99BCB"
+const NEUTRAL_LINE_COLOR = "#566174"
+
+/** Only owned and wishlisted connections carry a highlight color. */
+const lineColor = (kind: WebEdge["kind"]) => {
+    if (kind === "owned") return OWNED_LINE_COLOR
+    if (kind === "wishlist" || kind === "shared") return WISHLIST_LINE_COLOR
+    return NEUTRAL_LINE_COLOR
 }
 
 export type WebGraphModel = {
@@ -196,15 +208,6 @@ function moveAway(
     point.y += dy * shift
 }
 
-function gameTone(edges: WebEdge[], gameId: string): WebNode["tone"] {
-    const kinds = new Set(edges.filter((edge) => edge.game === gameId).map((edge) => edge.kind))
-    if (["playing", "owned", "favorite"].some((kind) => kinds.has(kind as WebEdge["kind"])))
-        return "coral"
-    if (["wishlist", "shared"].some((kind) => kinds.has(kind as WebEdge["kind"])))
-        return "lavender"
-    return "neutral"
-}
-
 /**
  * Deterministic similarity layout. People are relaxed into clusters using
  * Jaccard similarity over their collections; games then settle near the people
@@ -214,6 +217,7 @@ function gameTone(edges: WebEdge[], gameId: string): WebNode["tone"] {
 export function buildWebGraphModel(
     graph: SocialGraph,
     ownedIdsByPerson: Record<string, number[]> = {},
+    catalogGames: GameRecord[] = gameCatalog,
 ): WebGraphModel {
     const peopleSource = graph.nodes
         .filter(isPersonNode)
@@ -222,27 +226,43 @@ export function buildWebGraphModel(
     const overlayGameIds = new Set(
         Object.values(ownedIdsByPerson).flat().map((gameId) => String(gameId)),
     )
-    const gamesSource = graph.nodes.filter(
-        (node) =>
-            node.type === "Game" &&
-            (overlayGameIds.has(node.id) ||
-                graph.relationships.some(
-                    ([from, to, label]) =>
-                        GAME_LINK_LABELS.has(label) &&
-                        ((personIds.has(from) && to === node.id) ||
-                            (personIds.has(to) && from === node.id))
-                ))
-    )
+    const catalogById = new Map(catalogGames.map((game) => [String(game.id), game]))
+    /* A gifted catalog game may not be referenced anywhere in the seeded graph.
+       Add it from the canonical catalog so the ledger Owned edge has a node. */
+    const overlayGameNodes: SocialGraphNode[] = [...overlayGameIds]
+        .filter((id) => !graph.nodes.some((node) => node.type === "Game" && node.id === id))
+        .map((id): SocialGraphNode | null => {
+            const game = catalogById.get(id)
+            return game ? { id, name: game.title, type: "Game", game: game.id } : null
+        })
+        .filter((node): node is SocialGraphNode => node !== null)
+    const gamesSource = [
+        ...graph.nodes.filter(
+            (node) =>
+                node.type === "Game" &&
+                (overlayGameIds.has(node.id) ||
+                    graph.relationships.some(
+                        ([from, to, label]) =>
+                            GAME_LINK_LABELS.has(label) &&
+                            ((personIds.has(from) && to === node.id) ||
+                                (personIds.has(to) && from === node.id))
+                    )),
+        ),
+        ...overlayGameNodes,
+    ]
     const gameIds = new Set(gamesSource.map((node) => node.id))
 
     /* Accepted gifts and simulated purchases are ledger overlays. Existing
        edge de-duplication keeps them from doubling a seeded Owned edge. */
     const overlayRelationships: Array<[string, string, string]> = []
+    const ownedOverlayPairs = new Set<string>()
     for (const [personId, ids] of Object.entries(ownedIdsByPerson)) {
         if (!personIds.has(personId)) continue
         for (const gameId of ids) {
             const nodeId = String(gameId)
-            if (gameIds.has(nodeId)) overlayRelationships.push([personId, nodeId, "Owned"])
+            if (!gameIds.has(nodeId)) continue
+            overlayRelationships.push([personId, nodeId, "Owned"])
+            ownedOverlayPairs.add(`${personId}|${nodeId}`)
         }
     }
     const relationships = [...graph.relationships, ...overlayRelationships]
@@ -252,7 +272,15 @@ export function buildWebGraphModel(
         if (!GAME_LINK_LABELS.has(label)) continue
         const person = personIds.has(from) ? from : personIds.has(to) ? to : null
         const game = gameIds.has(from) ? from : gameIds.has(to) ? to : null
-        if (!person || !game || !RELATIONSHIP_KINDS[label]) continue
+        const relationship = RELATIONSHIP_KINDS[label]
+        if (!person || !game || !relationship) continue
+        /* Once a gift is accepted, the recipient's old wishline should not
+           compete with the Owned connection on the same person/game pair. */
+        if (
+            ownedOverlayPairs.has(`${person}|${game}`) &&
+            (relationship.kind === "wishlist" || relationship.kind === "shared")
+        )
+            continue
         const id = `${person}|${game}|${label}`
         if (edges.some((edge) => edge.id === id)) continue
         edges.push({
@@ -260,7 +288,7 @@ export function buildWebGraphModel(
             person,
             game,
             label,
-            kind: RELATIONSHIP_KINDS[label].kind,
+            kind: relationship.kind,
         })
     }
 
@@ -432,7 +460,6 @@ export function buildWebGraphModel(
         type: person.type,
         ...positions.get(person.id)!,
         degree: personDegree.get(person.id)?.size || 0,
-        tone: "mint",
     }))
     const games: WebNode[] = gamesSource.map((game) => ({
         id: game.id,
@@ -441,7 +468,6 @@ export function buildWebGraphModel(
         game: game.game,
         ...positions.get(game.id)!,
         degree: gamePeople.get(game.id)?.length || 0,
-        tone: gameTone(edges, game.id),
     }))
 
     const friendshipIds = new Set<string>()
@@ -489,8 +515,8 @@ export default function TheWeb({
     const lastFocus = React.useRef(initialSelection)
 
     const model = React.useMemo(
-        () => buildWebGraphModel(community.graph, community.ownedIdsByPerson),
-        [community.graph, community.ownedIdsByPerson],
+        () => buildWebGraphModel(community.graph, community.ownedIdsByPerson, games),
+        [community.graph, community.ownedIdsByPerson, games],
     )
 
     React.useEffect(() => {
@@ -602,16 +628,14 @@ export default function TheWeb({
             !activeIds.has(edge.person) &&
             !activeIds.has(edge.game)
         )
-            return 0.05
-        if (activeIds.size) return 0.78
-        return 0.13
+            return 0.06
+        if (activeIds.size) return 0.92
+        return 0.34
     }
 
     const personRadius = (node: WebNode) =>
         activeIds.has(node.id) ? 14 : node.id === "you" ? 12.5 : 11.5
     const gameRadius = (node: WebNode) => 3.6 + Math.min(2.4, node.degree * 0.6)
-    const toneColor = (tone: WebNode["tone"]) =>
-        tone === "coral" ? "#D98B7C" : tone === "lavender" ? "#A99BCB" : "#8993A5"
 
     const mostOverlapping = React.useMemo(() => {
         if (activeNode?.type === "Game") return []
@@ -753,12 +777,13 @@ export default function TheWeb({
                             return (
                                 <line
                                     key={edge.id}
+                                    data-web-edge-kind={edge.kind}
                                     x1={a.x}
                                     y1={a.y}
                                     x2={b.x}
                                     y2={b.y}
-                                    stroke={highlighted ? "#8EDCC0" : "#566174"}
-                                    strokeWidth={highlighted ? 1.3 : 0.8}
+                                    stroke={lineColor(edge.kind)}
+                                    strokeWidth={highlighted ? 1.5 : 0.9}
                                     opacity={edgeOpacity(edge)}
                                 />
                             )
@@ -804,7 +829,11 @@ export default function TheWeb({
                                         <>
                                             <circle className="webgraph-halo" r={radius + 7} />
                                             {active && <circle className="webgraph-halo active" r={radius + 12} />}
-                                            <circle className="webgraph-dot" r={radius} fill="#8EDCC0" />
+                                            <circle
+                                                className="webgraph-dot"
+                                                r={radius}
+                                                fill={WEB_DOT_COLOR}
+                                            />
                                         </>
                                     ) : (
                                         <>
@@ -812,13 +841,13 @@ export default function TheWeb({
                                                 <circle
                                                     className="webgraph-hub"
                                                     r={radius + 4}
-                                                    stroke={toneColor(node.tone)}
+                                                    stroke={WEB_DOT_COLOR}
                                                 />
                                             )}
                                             <circle
                                                 className="webgraph-dot"
                                                 r={radius}
-                                                fill={toneColor(node.tone)}
+                                                fill={WEB_DOT_COLOR}
                                             />
                                         </>
                                     )}
@@ -868,7 +897,13 @@ export default function TheWeb({
                     </button>
                 </div>
 
-                <p className="webgraph-hint">Drag to pan · Scroll or pinch to zoom</p>
+                <p className="webgraph-hint">
+                    Drag to pan · Scroll or pinch to zoom
+                    <span className="webgraph-legend" aria-label="Connection colors">
+                        <span className="webgraph-key owned" /> Owned
+                        <span className="webgraph-key wishlist" /> Wishlisted
+                    </span>
+                </p>
 
                 {activeNode && (
                     <aside className="webgraph-context" aria-live="polite">

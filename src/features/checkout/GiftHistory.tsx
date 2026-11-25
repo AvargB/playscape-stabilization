@@ -72,7 +72,7 @@ export default function GiftHistory({
     const received = getReceivedGifts(state, person.id)
     const sent = own ? getSentGifts(state, "you") : []
     const purchases = own ? getPersonalPurchases(state, "you") : []
-    const libraryIds = own && ownedIds.length
+    const libraryIds = ownedIds.length
         ? Array.from(new Set(ownedIds))
         : getOwnedGameIds(state, person.id)
 
@@ -331,32 +331,32 @@ export default function GiftHistory({
                             empty("No gifts sent yet.")
                         )}
                     </section>
-
-                    <section className="profile-section">
-                        <div className="section-head">
-                            <h2>Prototype library</h2>
-                            <p className="social-muted">
-                                Seeded games, simulated purchases, and accepted gifts — tied to canonical game IDs.
-                            </p>
-                        </div>
-                        {libraryIds.length ? (
-                            <ul className="gift-library" role="list">
-                                {libraryIds.map((id) => (
-                                    <li key={id} data-owned-game={id}>
-                                        <img src={steam(id)} alt="" />
-                                        <span>
-                                            {gameTitle(id)}
-                                            {own && <small>{acquisitionLabel(id)}</small>}
-                                        </span>
-                                    </li>
-                                ))}
-                            </ul>
-                        ) : (
-                            empty("Your prototype library is empty.")
-                        )}
-                    </section>
                 </>
             )}
+
+            <section className="profile-section">
+                <div className="section-head">
+                    <h2>Prototype library</h2>
+                    <p className="social-muted">
+                        Seeded games, simulated purchases, and accepted gifts — tied to canonical game IDs.
+                    </p>
+                </div>
+                {libraryIds.length ? (
+                    <ul className="gift-library" role="list">
+                        {libraryIds.map((id) => (
+                            <li key={id} data-owned-game={id}>
+                                <img src={steam(id)} alt="" />
+                                <span>
+                                    {gameTitle(id)}
+                                    <small>{acquisitionLabel(id)}</small>
+                                </span>
+                            </li>
+                        ))}
+                    </ul>
+                ) : (
+                    empty(`${own ? "Your" : `${person.name}’s`} prototype library is empty.`)
+                )}
+            </section>
         </div>
     )
 }

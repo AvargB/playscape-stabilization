@@ -25,6 +25,7 @@ import {
     createPrototypeTransaction,
     formatPrototypePrice,
     getOwnedGameIds,
+    getOwnedGameIdsByPerson,
     getReceivedGifts,
     loadCheckoutState,
     normalizePersistedCheckout,
@@ -175,6 +176,7 @@ test('shared cards, Compare, and Profile keep checkout entry points contextual',
     assert.match(app, /className="web-secondary card-checkout"/)
     assert.match(app, /onCheckout=\{openCheckout\}/)
     assert.match(app, /<CheckoutDialog/)
+    assert.match(app, /ownedIds=\{profileOwnedIds\}/)
     assert.match(summary, /Simulated checkout/)
     assert.doesNotMatch(summary, /Checkout and\s+availability are not handled here/)
     assert.match(profiles, /Received Gifts/)
@@ -424,8 +426,46 @@ test('accepting a gift adds it to the recipient prototype library without a real
     assert.match(html, /Accepted/)
     assert.match(html, /added to Jamie Lee’s prototype library/)
     assert.match(html, /No real game license was delivered/)
+    assert.match(html, /Prototype library/)
+    assert.match(html, /data-owned-game="413150"/)
     assert.doesNotMatch(html, /Accept gift<\/button>/)
     assert.deepEqual(getOwnedGameIds(state, 'jamie'), [STARDEW])
+})
+
+test('a friend profile overview shows an accepted gift in their owned library', () => {
+    const transaction = createTransaction({
+        id: 'txn-overview-gift',
+        session: {
+            id: 'gift-overview',
+            purchaseType: 'gift',
+            recipientId: 'jamie',
+        },
+    })
+    const accepted = respondToGift(transaction, 'accepted')
+    assert.equal(accepted.ok, true)
+    const state = { transactions: [accepted.transaction], ownedGameIds: [] }
+    const ownedIds = getOwnedGameIdsByPerson(state).jamie
+    const html = renderToStaticMarkup(
+        React.createElement(Profiles, {
+            id: 'jamie',
+            social: {
+                activity: [],
+                state: baseSocialState,
+                saved: [],
+                go() {},
+                setDialog() {},
+            },
+            renderAvatar: () => null,
+            renderSmallGame: ({ id, reason }) =>
+                React.createElement('span', { 'data-owned-game': id, 'data-reason': reason }),
+            renderActivityCard: () => null,
+            checkout: { state, onRespondToGift() { return { ok: false, errors: [] } } },
+            ownedIds,
+        }),
+    )
+
+    assert.match(html, /Jamie Lee’s prototype library/)
+    assert.match(html, /data-owned-game="413150"/)
 })
 
 test('declining a gift keeps the record and prevents duplicate acceptance', () => {
