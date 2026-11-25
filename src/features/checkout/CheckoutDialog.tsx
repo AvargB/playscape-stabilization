@@ -311,7 +311,7 @@ export default function CheckoutDialog({
         )
     }
 
-    function receiptItem(entry: PrototypeTransaction) {
+    function receiptItem(entry: PrototypeTransaction, showSuccess = false) {
         const game = checkoutGames.find((item) => item.id === entry.gameId)
         const summary = game ? buildCheckoutSummary(game) : null
         const itemRecipient = availableFriends.find(
@@ -319,6 +319,11 @@ export default function CheckoutDialog({
         )
         return (
             <section className="chk-receipt" key={entry.id}>
+                {showSuccess && (
+                    <span className="chk-success-icon" aria-hidden="true">
+                        <Icon name="check" size={18} />
+                    </span>
+                )}
                 <img src={steam(entry.gameId)} alt={summary?.title ?? "Game artwork"} />
                 <div>
                     <div className="kicker">
@@ -419,10 +424,7 @@ export default function CheckoutDialog({
 
                 {step === "complete" && completed.length ? (
                     <div className="chk-complete" data-checkout-complete="true">
-                        <div className="chk-success-icon" aria-hidden="true">
-                            <Icon name="check" size={22} />
-                        </div>
-                        {completed.map(receiptItem)}
+                        {completed.map((entry, index) => receiptItem(entry, index === 0))}
                         {completed.find((entry) => entry.giftMessage)?.giftMessage && (
                             <blockquote className="chk-message">
                                 “{completed.find((entry) => entry.giftMessage)?.giftMessage}”

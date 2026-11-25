@@ -46,10 +46,8 @@ test('one global footer is shared by every primary view', () => {
         assert.equal((html.match(/<footer/g) || []).length, 1, `${view} has one footer`)
         assert.match(html, /<footer class="global-footer"/)
         assert.match(html, /class="app-content"/)
-        assert.match(
-            html,
-            /PLAYSCAPE is a community-driven prototype\. Features and content\s+are subject to change\./,
-        )
+        assert.match(html, /PLAYSCAPE is a prototype\./)
+        assert.doesNotMatch(html, /community-driven prototype/)
         assert.match(
             html,
             /<button type="button" class="global-footer-logo" aria-label="Return to PLAYSCAPE home"/,

@@ -150,6 +150,15 @@
   background: var(--accent);
   color: var(--ink);
 }
+.ps .chk-receipt .chk-success-icon {
+  position: absolute;
+  left: 10px;
+  top: 10px;
+  z-index: 1;
+  width: 34px;
+  height: 34px;
+  border: 2px solid var(--surface);
+}
 
 .ps .chk-success {
   margin-bottom: 18px;
@@ -159,6 +168,7 @@
 }
 
 .ps .chk-receipt {
+  position: relative;
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
   gap: 18px;

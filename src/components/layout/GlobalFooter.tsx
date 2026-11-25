@@ -20,10 +20,7 @@ export function GlobalFooter({ atmosphere, onNavigate }: GlobalFooterProps) {
             aria-label="Site footer"
             data-atmosphere={season}
         >
-            <p className="global-footer-disclaimer">
-                PLAYSCAPE is a community-driven prototype. Features and content
-                are subject to change.
-            </p>
+            <p className="global-footer-disclaimer">PLAYSCAPE is a prototype.</p>
             <button
                 type="button"
                 className="global-footer-logo"

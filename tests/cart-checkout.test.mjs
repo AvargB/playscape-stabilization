@@ -241,4 +241,12 @@ test('batch receipt keeps one simulated record per cart game', () => {
     assert.match(html, /PS-cart-txn-1/)
     assert.match(html, /PS-cart-txn-2/)
     assert.equal((html.match(/data-transaction-reference="true"/g) ?? []).length, 2)
+    assert.equal((html.match(/class="chk-success-icon"/g) ?? []).length, 1)
+    assert.match(html, /class="chk-receipt"[^>]*>\s*<span class="chk-success-icon"/)
+})
+
+test('receipt success badge sits inside the first receipt corner', () => {
+    const source = readFileSync(new URL('features/checkout/checkout.css', srcRoot), 'utf8')
+    assert.match(source, /\.ps \.chk-receipt \{[^}]*position: relative/)
+    assert.match(source, /\.ps \.chk-receipt \.chk-success-icon \{[^}]*left: 10px[^}]*top: 10px/)
 })
