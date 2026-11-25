@@ -109,6 +109,20 @@
     border-color: var(--accent);
 }
 
+.ps .cmp-selection .cmp-selection-open {
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    text-decoration: underline;
+    text-underline-offset: 2px;
+}
+.ps .cmp-selection .cmp-selection-open:hover {
+    border-color: transparent;
+    color: var(--accent);
+}
+
 .ps .cmp-panel {
     margin-top: 22px;
     padding: 24px;
@@ -184,7 +198,7 @@
     background: var(--bg);
 }
 
-.ps .cmp-result > img {
+.ps .cmp-result-art img {
     width: 82px;
     height: 46px;
     object-fit: cover;
@@ -230,6 +244,31 @@
 .ps .cmp-result button:disabled {
     opacity: 0.55;
     cursor: not-allowed;
+}
+
+.ps .cmp-result .cmp-result-art {
+    min-height: 0;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    line-height: 0;
+}
+.ps .cmp-result .cmp-result-title {
+    align-self: flex-start;
+    min-height: 0;
+    max-width: 100%;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 13px;
+    font-weight: 600;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.ps .cmp-result .cmp-result-title:hover strong {
+    color: var(--accent);
 }
 
 .ps .cmp-selected-tag {
@@ -330,11 +369,24 @@
     margin-bottom: 10px;
 }
 
+.ps .cmp-game-art {
+    display: block;
+    width: 100%;
+    padding: 0;
+    border: 0;
+    border-radius: 6px;
+    background: transparent;
+    line-height: 0;
+}
 .ps .cmp-game-head img {
     width: 100%;
     aspect-ratio: 1.92;
     object-fit: cover;
     border-radius: 6px;
+}
+.ps .cmp-game-art:hover img {
+    outline: 2px solid var(--accent);
+    outline-offset: 2px;
 }
 
 .ps .cmp-game-title {
@@ -505,6 +557,24 @@
     text-decoration: none;
 }
 
+.ps .cmp-actions .cmp-summary-game {
+    margin-right: auto;
+    padding: 0;
+    border: 0;
+    background: transparent;
+    color: var(--text);
+    font-size: 12px;
+    text-align: left;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+}
+.ps .cmp-actions .cmp-summary-game strong {
+    margin-right: 0;
+}
+.ps .cmp-actions .cmp-summary-game:hover {
+    color: var(--accent);
+}
+
 .ps .cmp-page :focus-visible {
     outline: 2px solid var(--accent);
     outline-offset: 3px;
@@ -627,7 +697,7 @@
 
 @media (max-width: 480px) {
     .ps .cmp-filters { display: grid; grid-template-columns: 1fr; }
-    .ps .cmp-result > img { width: 66px; height: 40px; }
+    .ps .cmp-result-art img { width: 66px; height: 40px; }
     .ps .cmp-table .cmp-game-col { min-width: 154px; }
     .ps .cmp-table .cmp-label-col { min-width: 108px; width: 108px; }
     .ps .cmp-table th, .ps .cmp-table td { padding: 9px; font-size: 11px; }

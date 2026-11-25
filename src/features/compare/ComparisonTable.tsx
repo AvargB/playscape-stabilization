@@ -93,13 +93,21 @@ export default function ComparisonTable({
                                 return (
                                     <th scope="col" key={game.id} className="cmp-game-col">
                                         <div className="cmp-game-head">
-                                            <img
-                                                src={steam(game.steamAppId || game.id)}
-                                                alt={`${game.title} cover art`}
-                                            />
+                                            <button
+                                                type="button"
+                                                className="cmp-game-art"
+                                                aria-label={`View ${game.title} product details`}
+                                                onClick={() => onOpenGame(game)}
+                                            >
+                                                <img
+                                                    src={steam(game.steamAppId || game.id)}
+                                                    alt={`${game.title} cover art`}
+                                                />
+                                            </button>
                                             <button
                                                 type="button"
                                                 className="cmp-game-title"
+                                                aria-label={`View ${game.title} product details`}
                                                 aria-describedby={describedBy}
                                                 onPointerEnter={(event) => {
                                                     if (event.pointerType !== "touch") {

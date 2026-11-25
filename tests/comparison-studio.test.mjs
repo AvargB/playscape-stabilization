@@ -268,6 +268,33 @@ test('comparison workspace renders existing wishlist state and actions', () => {
     assert.doesNotMatch(compareSource, /localStorage|saveAppState|createContext/)
 })
 
+test('comparison game presentations open the product details view', () => {
+    const html = renderPage({ selectedGameIds: [STARDEW, HADES], saved: [] })
+    const stardewLabel = `View ${getGameById(STARDEW).title} product details`
+    assert.ok(html.includes(stardewLabel))
+    assert.match(html, /class="cmp-selection-open"/)
+    assert.match(html, /class="cmp-result-art"/)
+    assert.match(html, /class="cmp-result-title"/)
+    assert.match(html, /class="cmp-game-art"/)
+    assert.match(html, /class="cmp-summary-game"/)
+
+    const compareSource = readFileSync(
+        path.join(srcRoot, 'features/compare/ComparePage.tsx'), 'utf8')
+    const pickerSource = readFileSync(
+        path.join(srcRoot, 'features/compare/GamePicker.tsx'), 'utf8')
+    const tableSource = readFileSync(
+        path.join(srcRoot, 'features/compare/ComparisonTable.tsx'), 'utf8')
+    const summarySource = readFileSync(
+        path.join(srcRoot, 'features/compare/ComparisonSummary.tsx'), 'utf8')
+
+    assert.match(compareSource, /className="cmp-selection-open"[\s\S]*?onOpenGame\(game\)/)
+    assert.match(compareSource, /<GamePicker[\s\S]*?onOpenGame=\{onOpenGame\}/)
+    assert.match(pickerSource, /onOpenGame\?: \(game: GameRecord \| number\) => void/)
+    assert.match(pickerSource, /onOpenGame\?\.\(game\)/)
+    assert.match(tableSource, /className="cmp-game-art"[\s\S]*?onOpenGame\(game\)/)
+    assert.match(summarySource, /className="cmp-summary-game"[\s\S]*?onOpenGame\(game\)/)
+})
+
 /* ------------------------------------------------------------------ */
 /* 11–12. Persistence and invalid stored data                           */
 /* ------------------------------------------------------------------ */

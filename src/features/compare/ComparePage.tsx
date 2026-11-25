@@ -151,7 +151,14 @@ export default function ComparePage({
                 <ul className="cmp-selection" aria-label="Games in this comparison">
                     {selectedGames.map((game) => (
                         <li key={game.id}>
-                            <span>{game.title}</span>
+                            <button
+                                type="button"
+                                className="cmp-selection-open"
+                                aria-label={`View ${game.title} product details`}
+                                onClick={() => onOpenGame(game)}
+                            >
+                                {game.title}
+                            </button>
                             <button
                                 type="button"
                                 aria-label={`Remove ${game.title} from comparison`}
@@ -168,6 +175,7 @@ export default function ComparePage({
                 selectedGameIds={selectedGameIds}
                 onAdd={handleAdd}
                 onRemove={handleRemove}
+                onOpenGame={onOpenGame}
                 {...infoHandlers}
             />
             {selectedGames.length === 0 ? (

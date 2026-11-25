@@ -11,6 +11,7 @@ export interface GamePickerProps extends GameInfoHandlers {
     selectedGameIds: number[]
     onAdd: (id: number) => void
     onRemove: (id: number) => void
+    onOpenGame?: (game: GameRecord | number) => void
 }
 
 export default function GamePicker({
@@ -18,6 +19,7 @@ export default function GamePicker({
     selectedGameIds,
     onAdd,
     onRemove,
+    onOpenGame,
     onGameHover,
     onGameLeave,
     onGameInfoToggle,
@@ -71,7 +73,14 @@ export default function GamePicker({
                         const describedBy = infoGameId === game.id ? "cmp-game-info" : undefined
                         return (
                             <li className="cmp-result" key={game.id}>
-                                <img src={steam(game.steamAppId || game.id)} alt="" loading="lazy" />
+                                <button
+                                    type="button"
+                                    className="cmp-result-art"
+                                    aria-label={`View ${game.title} product details`}
+                                    onClick={() => onOpenGame?.(game)}
+                                >
+                                    <img src={steam(game.steamAppId || game.id)} alt="" loading="lazy" />
+                                </button>
                                 <div
                                     className="cmp-result-body"
                                     tabIndex={0}
@@ -91,7 +100,14 @@ export default function GamePicker({
                                         }
                                     }}
                                 >
-                                    <strong>{game.title}</strong>
+                                    <button
+                                        type="button"
+                                        className="cmp-result-title"
+                                        aria-label={`View ${game.title} product details`}
+                                        onClick={() => onOpenGame?.(game)}
+                                    >
+                                        <strong>{game.title}</strong>
+                                    </button>
                                     <span className="cmp-muted">{game.genre}</span>
                                     <span className="cmp-muted">
                                         ${game.price.toFixed(2)} · {game.platforms.join(", ")}

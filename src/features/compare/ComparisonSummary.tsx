@@ -171,7 +171,14 @@ export default function ComparisonSummary({
                 <ul>
                     {games.map((game) => (
                         <li key={game.id}>
-                            <strong>{game.title}</strong>
+                            <button
+                                type="button"
+                                className="cmp-summary-game"
+                                aria-label={`View ${game.title} product details`}
+                                onClick={() => onOpenGame(game)}
+                            >
+                                <strong>{game.title}</strong>
+                            </button>
                             <button
                                 type="button"
                                 className="web-secondary"
